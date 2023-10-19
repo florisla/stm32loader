@@ -183,6 +183,15 @@ DEVICE_DETAILS = [
     # WBA, WB, WL or simply 'W'?
     DeviceInfo("W", "STM32W 128k", "", "", 0x9A8, None, (0x20000200, 0x20002000), (0x08040000, 0x08040800)),
     DeviceInfo("W", "STM32W 256k", "", "", 0x9B0, None, (0x20000200, 0x20004000), (0x08040000, 0x08040800)),
+
+    # ST BlueNRG
+    DeviceInfo("NRG1", "BlueNRG-1", "160kB", "", 0x03, None, None, None),
+    DeviceInfo("NRG1", "BlueNRG-1", "256kB", "", 0x0F, None, None, None),
+    DeviceInfo("NRG2", "BlueNRG-1", "160kB", "", 0x23, None, None, None),
+    DeviceInfo("NRG2", "BlueNRG-1", "256kB", "", 0x2F, None, None, None),
+
+    # Wiznet W7500
+    DeviceInfo("WIZ", "Wiznet W7500", "", "", 0x801, None, None, None),
 ]
 
 DEVICES = {(dev.product_id, dev.bootloader_id): dev for dev in DEVICE_DETAILS}
