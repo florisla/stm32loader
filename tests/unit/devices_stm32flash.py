@@ -102,7 +102,7 @@ DEVICE_TABLE = [
 ]
 
 KEYS = [
-    "product_id", "product_name",
+    "product_id", "device_name",
     "ram_start", "ram_end",
     "flash_start", "flash_end",
     "pages_per_sector", "page_size",

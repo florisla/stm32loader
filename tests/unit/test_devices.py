@@ -84,6 +84,30 @@ def test_stm32flash_product_ids_are_present_in_devices():
     assert len(unknown_chip_ids) == 0, unknown_chip_ids
 
 
+def test_stm32flash_device_names_match():
+    for device in DEVICES.values():
+        stm32flash_device = None
+        for dev in STM32FLASH_DEVICES:
+            if dev["product_id"] == device.product_id:
+                stm32flash_device = dev
+                break
+
+        # Some devices don't exist in STM32Flash.
+        if not stm32flash_device and device.product_id in [0x443, 0x453, 0x474, 0x484, 0x492, 0x455, 0x481, 0x003, 0x00F, 0x0023, 0x002F, 0x801]:
+            continue
+
+        # Known / reviewed deviating names.
+        if device.product_id in [
+            0x440, 0x442, 0x445, 0x448, 0x412, 0x410, 0x414, 0x420, 0x428, 0x418, 0x430, 0x432,
+            0x422, 0x439, 0X438, 0x446, 0x467, 0x495, 0x641, 0x9A8, 0x9B0,
+        ]:
+            continue
+
+        assert stm32flash_device, f"{device.device_name} 0x{device.product_id:03X}"
+        assert stm32flash_device["device_name"] == device.device_name, f"{device.device_name} 0x{device.product_id:03X}"
+
+
+
 def test_stm32flash_ram_addresses_match():
     for device in DEVICES.values():
         ref = None

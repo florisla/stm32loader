@@ -151,14 +151,14 @@ DEVICE_DETAILS = [
     DeviceInfo("C0", "STM32C011xx", "", "", 0x443, 0x51, (0x_2000_0000, 0x_2000_3000), (0x_1FFF_0000, 0x_1FFF_1800)),
     # Error in AN2606? Ram is mentioned as 0x_2000_2000 - 0x_2000_17FF
     DeviceInfo("C0", "STM32C031xx", "", "", 0x453, 0x52, (0x_2000_2000, 0x_2000_2800), (0x_1FFF_0000, 0x_1FFF_1800)),
-    DeviceInfo("F0", "STM32F05xxx/STM32F030x8", "", "", 0x440, 0x21, (0x_2000_0800, 0x_2000_2000), (0x_1FFF_EC00, 0x_1FFF_F800)),
+    DeviceInfo("F0", "STM32F05xxx/030x8", "", "", 0x440, 0x21, (0x_2000_0800, 0x_2000_2000), (0x_1FFF_EC00, 0x_1FFF_F800)),
     DeviceInfo("F0", "STM32F03xx4/6", "", "", 0x444, 0x10, (0x_2000_0800, 0x_2000_1000), (0x_1FFF_EC00, 0x_1FFF_F800)),
     DeviceInfo("F0", "STM32F030xC", "", "", 0x442, 0x52, (0x_2000_1800, 0x_2000_8000), (0x_1FFF_D800, 0x_1FFF_F800)),
     DeviceInfo("F0", "STM32F04xxx", "", "", 0x445, 0xA1, None, (0x_1FFF_C400, 0x_1FFF_F800)),
     DeviceInfo("F0", "STM32F070x6", "", "", 0x445, 0xA2, None, (0x_1FFF_C400, 0x_1FFF_F800)),
     DeviceInfo("F0", "STM32F070xB", "", "", 0x448, 0xA2, None, (0x_1FFF_C800, 0x_1FFF_F800)),
     DeviceInfo("F0", "STM32F071xx/072xx", "", "", 0x448, 0xA1, (0x_2000_1800, 0x_2000_4000), (0x_1FFF_C800, 0x_1FFF_F800)),
-    DeviceInfo("F0", "STM32F09xxx", 0x442, "", "",  0x50, None, (0x_1FFF_D800, 0x_1FFF_F800)),
+    DeviceInfo("F0", "STM32F09xxx", "", "", 0x442, 0x50, None, (0x_1FFF_D800, 0x_1FFF_F800)),
     DeviceInfo("F1", "STM32F10xxx", "", "Low-density",  0x412, None, (0x_2000_0200, 0x_2000_2800), (0x_1FFF_F000, 0x_1FFF_F800)),
     DeviceInfo("F1", "STM32F10xxx", "", "Medium-density",  0x410, None, (0x_2000_0200, 0x_2000_5000), (0x_1FFF_F000, 0x_1FFF_F800)),
     DeviceInfo("F1", "STM32F10xxx", "", "High-density",  0x414, None, (0x_2000_0200, 0x_2001_0000), (0x_1FFF_F000, 0x_1FFF_F800)),
@@ -228,21 +228,21 @@ DEVICE_DETAILS = [
     DeviceInfo("L4", "STM32L496xx/4A6xx", "", "", 0x461, 0x93, (0x_2000_3100, 0x_2004_0000), (0x_1FFF_0000, 0x_1FFF_7000)),
     DeviceInfo("L4", "STM32L4Rxx/4Sxx", "", "", 0x470, 0x95, (0x_2000_3200, 0x_200A_0000), (0x_1FFF_0000, 0x_1FFF_7000)),
     DeviceInfo("L4", "STM32L4P5xx/Q5xx", "", "", 0x471, 0x90, (0x_2000_4000, 0x_2005_0000), (0x_1FFF_0000, 0x_1FFF_7000)),
-    DeviceInfo("L5", "L5STM32L552xx/562xx", "", "", 0x472, 0x92, (0x_2000_4000, 0x_2004_0000), (0x_0BF9_0000, 0x_0BF9_8000)),
+    DeviceInfo("L5", "STM32L552xx/562xx", "", "", 0x472, 0x92, (0x_2000_4000, 0x_2004_0000), (0x_0BF9_0000, 0x_0BF9_8000)),
     DeviceInfo("WBA", "STM32WBA52xx", "", "", 0x492, 0xB0, (0x_2000_0000, 0x_2000_2000), (0x_0BF8_8000, 0x_0BF9_0000)),
     DeviceInfo("WB", "STM32WB10xx/15xx", "", "", 0x494, 0xB1, (0x_2000_5000, 0x_2004_0000), (0x_1FFF_0000, 0x_1FFF_7000)),
-    DeviceInfo("WB", "STM32WB30xx/35xx/50xx/WB55xx", "", "", 0x495, 0xD5, (0x_2000_4000, 0x_2000_C000), (0x_1FFF_0000, 0x_1FFF_7000)),
+    DeviceInfo("WB", "STM32WB30xx/35xx/50xx/55xx", "", "", 0x495, 0xD5, (0x_2000_4000, 0x_2000_C000), (0x_1FFF_0000, 0x_1FFF_7000)),
     DeviceInfo("WL", "STM32WLE5xx/WL55xx", "", "", 0x497, 0xC4, (0x_2000_2000, 0x_2001_0000), (0x_1FFF_0000, 0x_1FFF_4000)),
     DeviceInfo("U5", "STM32U535xx/545xx", "", "", 0x455, 0x91, (0x_2000_4000, 0x_2024_0000), (0x_0BF9_0000, 0x_0BFA_0000)),
-    DeviceInfo("U5", "STM32U575xx/ STM32U585xx", "", "", 0x482, 0x92, (0x_2000_4000, 0x_200C_0000), (0x_0BF9_0000, 0x_0BFA_0000)),
+    DeviceInfo("U5", "STM32U575xx/585xx", "", "", 0x482, 0x92, (0x_2000_4000, 0x_200C_0000), (0x_0BF9_0000, 0x_0BFA_0000)),
     DeviceInfo("U5", "STM32U595xx/599xx/5A9xx", "", "", 0x481, 0x92, (0x_2000_4000, 0x_2027_0000), (0x_0BF9_0000, 0x_0BFA_0000)),
 
     # Not yet in AN2606.  Bootloader IDs are unknown.
     # F1 is assumed here.
     DeviceInfo("F1", "STM32F103x8/B", "", "Medium-density performance", 0x641, None, (0x20000200, 0x20005000), (0x1FFFF000, 0x1FFFF800)),
     # WBA, WB, WL or simply 'W'?
-    DeviceInfo("W", "STM32W 128k", "", "", 0x9A8, None, (0x20000200, 0x20002000), (0x08040000, 0x08040800)),
-    DeviceInfo("W", "STM32W 256k", "", "", 0x9B0, None, (0x20000200, 0x20004000), (0x08040000, 0x08040800)),
+    DeviceInfo("W", "STM32W", "128kB", "", 0x9A8, None, (0x20000200, 0x20002000), (0x08040000, 0x08040800)),
+    DeviceInfo("W", "STM32W", "256kB", "", 0x9B0, None, (0x20000200, 0x20004000), (0x08040000, 0x08040800)),
 
     # ST BlueNRG
     DeviceInfo("NRG1", "BlueNRG-1", "160kB", "", 0x03, None, None, None),
