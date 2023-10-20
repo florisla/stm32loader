@@ -1,6 +1,6 @@
 
-from stm32loader.devices import DEVICES
-from stm32loader.bootloader import CHIP_IDS
+from stm32loader.devices import DEVICES, DEVICE_FAMILIES, DeviceFamily
+from stm32loader.bootloader import CHIP_IDS, Stm32Bootloader
 from devices_stm32flash import DEVICES as STM32FLASH_DEVICES
 
 KNOWN_DUPLICATE_DEVICE_NAMES = [
@@ -109,3 +109,36 @@ def test_stm32flash_ram_addresses_match():
         # print(hex(device.product_id), device, device.ram, ref)
         assert device.ram[0] == ref["ram_start"], f"RAM start differs for device: '{device.device_name}' 0x{device.product_id:03X}: 0x{device.ram[0]:08X} vs 0x{ref['ram_start']:08X}."
         assert device.ram[1] == ref["ram_end"], f"RAM end differs for device: '{device.device_name}' 0x{device.product_id:03X}: 0x{device.ram[1]:08X} vs 0x{ref['ram_end']:08X}."
+
+
+def test_family_uid_address_matches_existing():
+    for family_code, uid_address in Stm32Bootloader.UID_ADDRESS.items():
+        if family_code == "NRG":
+            continue
+        family = DeviceFamily[family_code]
+        family_uid_address = DEVICE_FAMILIES[family].uid_address
+        assert uid_address == family_uid_address, (
+            f"Device family UID address does not match: '{family_code}': 0x{uid_address:08X} vs 0x{family_uid_address:08X}."
+        )
+
+
+def test_family_flash_size_address_matches_existing():
+    for family_code, size_address in Stm32Bootloader.FLASH_SIZE_ADDRESS.items():
+        if family_code == "NRG":
+            continue
+        family = DeviceFamily[family_code]
+        family_size_address = DEVICE_FAMILIES[family].flash_size_address
+        assert size_address == family_size_address, (
+            f"Device family flash size address does not match: '{family_code}': 0x{size_address:08X} vs 0x{family_size_address:08X}."
+        )
+
+
+def test_family_transfer_size_matches_existing():
+    for family_code, transfer_size in Stm32Bootloader.DATA_TRANSFER_SIZE.items():
+        if family_code in ["default", "NRG"]:
+            continue
+        family = DeviceFamily[family_code]
+        family_transfer_size = DEVICE_FAMILIES[family].transfer_size
+        assert transfer_size == family_transfer_size, (
+            f"Device family transfer size does not match: '{family_code}': 0x{transfer_size:08X} vs 0x{family_transfer_size:08X}."
+        )

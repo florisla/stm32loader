@@ -32,6 +32,66 @@ class DeviceFamily(enum.Enum):
     WIZ = "WIZ"
 
 
+class DeviceFamilyInfo:
+
+    def __init__(
+            self,
+            uid_address=None,
+            flash_size_address=None,
+            flash_page_size=1024,
+            transfer_size=256,
+            mass_erase=True,
+            option_bytes=None,
+    ):
+        self.uid_address = uid_address
+        self.flash_size_address = flash_size_address
+        self.flash_page_size = flash_page_size
+        self.transfer_size = transfer_size
+        self.mass_erase = mass_erase
+        self.option_bytes = option_bytes
+
+
+DEVICE_FAMILIES = {
+    DeviceFamily.C0: DeviceFamilyInfo(),
+    # RM0360
+    DeviceFamily.F0: DeviceFamilyInfo(flash_size_address=0x1FFFF7CC, option_bytes=(0x1FFFF800, 0x1FFFF80F)),
+    # RM0008
+    DeviceFamily.F1: DeviceFamilyInfo(uid_address=0x1FFFF7E8, flash_size_address=0x1FFFF7E0, option_bytes=(0x1FFFF800, 0x1FFFF80F)),
+    DeviceFamily.F2: DeviceFamilyInfo(option_bytes=(0x1FFFC000, 0x1FFFC00F)),
+    # RM0366, RM0365, RM0316, RM0313, RM4510
+    DeviceFamily.F3: DeviceFamilyInfo(uid_address=0x1FFFF7AC, flash_size_address=0x1FFFF7CC, flash_page_size=2048),
+    # RM0090
+    DeviceFamily.F4: DeviceFamilyInfo(uid_address=0x1FFF7A10, flash_size_address=0x1FFF7A22),
+    # RM0385
+    DeviceFamily.F7: DeviceFamilyInfo(uid_address=0x1FF0F420, flash_size_address=0x1FF0F442),
+    # RM0444
+    DeviceFamily.G0: DeviceFamilyInfo(uid_address=0x1FFF7590, flash_size_address=0x1FFF75E0),
+    DeviceFamily.G4: DeviceFamilyInfo(),
+    DeviceFamily.H5: DeviceFamilyInfo(),
+    # RM0433
+    DeviceFamily.H7: DeviceFamilyInfo(uid_address=0x1FF1E800, flash_size_address=0x1FF1E880, flash_page_size=128 * 1024),
+    # FIXME TWO RMs?
+    # RM0451, RM4510
+    DeviceFamily.L0: DeviceFamilyInfo(uid_address=0x1FF80050, flash_size_address=0x1FF8007C, transfer_size=128, flash_page_size=128, mass_erase=False),
+    DeviceFamily.L1: DeviceFamilyInfo(mass_erase=False),
+    # RM0394
+    DeviceFamily.L4: DeviceFamilyInfo(uid_address=0x1FFF7590, flash_size_address=0x1FFF75E0),
+    DeviceFamily.L5: DeviceFamilyInfo(),
+    DeviceFamily.WBA: DeviceFamilyInfo(),
+    DeviceFamily.WB: DeviceFamilyInfo(),
+    # RM0453
+    DeviceFamily.WL: DeviceFamilyInfo(uid_address=0x1FFF7590, flash_size_address=0x1FFF75E0),
+    DeviceFamily.U5: DeviceFamilyInfo(),
+    DeviceFamily.W: DeviceFamilyInfo(),
+    # ST BlueNRG has DIE_ID register with PRODUCT, but no UID.
+    # NRG BlueNRG-2 datasheet
+    # Flash page size: 128 pages of 8 * 64 * 4 bytes
+    DeviceFamily.NRG1: DeviceFamilyInfo(flash_size_address=0x40100014, flash_page_size=2048),
+    DeviceFamily.NRG2: DeviceFamilyInfo(flash_size_address=0x40100014, flash_page_size=2048),
+    DeviceFamily.WIZ: DeviceFamilyInfo(),
+}
+
+
 class DeviceInfo:
 
     def __init__(self, device_family, device_name, variant, product_line, product_id, bootloader_id, ram, system_memory):
