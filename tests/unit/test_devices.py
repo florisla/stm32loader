@@ -1,5 +1,7 @@
 
 from stm32loader.devices import DEVICES
+from stm32loader.bootloader import CHIP_IDS
+from devices_stm32flash import DEVICES as STM32FLASH_DEVICES
 
 KNOWN_DUPLICATE_DEVICE_NAMES = [
     "STM32F2xxxx",
@@ -8,6 +10,23 @@ KNOWN_DUPLICATE_DEVICE_NAMES = [
     "STM32F74xxx/75xxx",
     "STM32L07xxx/08xxx",
     "STM32L47xxx/48xxx",
+    "STM32F10xxx",
+    "BlueNRG-1",
+    "BlueNRG-2",
+]
+
+KNOWN_RAM_EXCEPTIONS = [
+    # Most of these have belong to the 'known duplicate' category,
+    # they share the same product ID (with differing bootloader ID).
+    # The others received a comment in the device table.
+    0x442,
+    0x448,
+    0x432,
+    0x413,
+    0x456,
+    0x447,
+    0x464,
+    0x415,
 ]
 
 
@@ -49,3 +68,44 @@ def test_system_memory_size_multiple_of_64():
 def test_device_name_does_not_contain_underscore():
     for dev in DEVICES.values():
         assert "_" not in dev.device_name, dev.device_name
+
+
+def test_existing_product_ids_are_present_in_devices():
+    all_product_ids = set(dev.product_id for dev in DEVICES.values())
+    chip_ids = set(CHIP_IDS)
+    unknown_chip_ids = chip_ids - all_product_ids
+    assert len(unknown_chip_ids) == 0, unknown_chip_ids
+
+
+def test_stm32flash_product_ids_are_present_in_devices():
+    all_product_ids = set(dev.product_id for dev in DEVICES.values())
+    chip_ids = set(dev["product_id"] for dev in STM32FLASH_DEVICES)
+    unknown_chip_ids = chip_ids - all_product_ids
+    assert len(unknown_chip_ids) == 0, unknown_chip_ids
+
+
+def test_stm32flash_ram_addresses_match():
+    for device in DEVICES.values():
+        ref = None
+        for _ref in STM32FLASH_DEVICES:
+            if _ref["product_id"] == device.product_id:
+                ref = _ref
+                break
+
+        if ref is None:
+            # not found
+            continue
+
+        if device.product_id in KNOWN_RAM_EXCEPTIONS:
+            continue
+
+        if device.ram is None:
+            assert ref["ram_start"] == ref["ram_end"], f"RAM size not 0 for device '{device.device_name}' 0x{device.product_id:03X}"
+            continue
+
+        if isinstance(device.ram[0], tuple):
+            continue
+
+        # print(hex(device.product_id), device, device.ram, ref)
+        assert device.ram[0] == ref["ram_start"], f"RAM start differs for device: '{device.device_name}' 0x{device.product_id:03X}: 0x{device.ram[0]:08X} vs 0x{ref['ram_start']:08X}."
+        assert device.ram[1] == ref["ram_end"], f"RAM end differs for device: '{device.device_name}' 0x{device.product_id:03X}: 0x{device.ram[1]:08X} vs 0x{ref['ram_end']:08X}."
