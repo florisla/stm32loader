@@ -30,6 +30,7 @@ except ImportError:
     progress_bar = None
 
 from stm32loader import args, bootloader, hexfile
+# from stm32loader.devices import DEVICES
 from stm32loader.uart import SerialConnection
 
 
@@ -177,11 +178,15 @@ class Stm32Loader:
         self.stm32.reset_from_flash()
 
     def read_device_id(self):
-        """Show chip ID and bootloader version."""
+        """Show product ID and bootloader version."""
         boot_version = self.stm32.get()
         self.debug(0, "Bootloader version: 0x%X" % boot_version)
         device_id = self.stm32.get_id()
+
         family = self.configuration.family
+        # if not family:
+        #     family =
+
         if family == "NRG":
             # ST AN4872.
             # Three bytes encode metal fix, mask set,

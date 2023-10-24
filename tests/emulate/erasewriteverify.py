@@ -120,7 +120,7 @@ class FakeConnection:
 
 class FakeConfiguration:
 
-    def __init__(self, erase, write, verify, firmware_file):
+    def __init__(self, erase, write, verify, firmware_file, family=None):
         self.erase = erase
         self.write = write
         self.verify = verify
@@ -131,12 +131,12 @@ class FakeConfiguration:
         self.verbosity = 5
         self.address = 0x_0800_0000
         self.go_address = None
-        self.family = "F1"
+        self.family = family
 
 
 def erase_write_verify():
     loader = Stm32Loader()
-    loader.configuration = FakeConfiguration(erase=True, write=True, verify=True, firmware_file=FIRMWARE_FILE)
+    loader.configuration = FakeConfiguration(erase=True, write=True, verify=True, firmware_file=FIRMWARE_FILE, family=None)
     loader.connection = FakeConnection()
     loader.stm32 = Stm32Bootloader(loader.connection, device_family="F1")
 
