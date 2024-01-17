@@ -32,6 +32,18 @@ class DeviceFamily(enum.Enum):
     WIZ = "WIZ"
 
 
+@enum.unique
+class DeviceFlag(enum.IntEnum):
+    NONE = 0
+    OBL_LAUNCH = 1
+    CLEAR_PEMPTY = 2
+    # For some reason, F4 (at least, NUCLEO F401RE) can't read the 12 or 2
+    # bytes for UID and flash size directly.
+    # Reading a whole chunk of 256 bytes at 0x1FFFA700 does work and
+    # requires some data extraction.
+    LONG_UID_ACCESS = 8
+
+
 class DeviceFamilyInfo:
 
     def __init__(
