@@ -8,7 +8,7 @@ from stm32loader.emulated.fake import FakeConfiguration, FakeConnection
 FIRMWARE_FILE = Path(__file__).parent / "../../firmware/generic_boot20_pc13.binary.bin"
 
 
-def erase_write_verify():
+def test_erase_write_verify_passes():
     loader = Stm32Loader()
     loader.configuration = FakeConfiguration(erase=True, write=True, verify=True, firmware_file=FIRMWARE_FILE, family=None)
     loader.connection = FakeConnection()
@@ -18,7 +18,3 @@ def erase_write_verify():
     loader.read_device_uid()
     loader.read_flash_size()
     loader.perform_commands()
-
-
-if __name__ == "__main__":
-    erase_write_verify()
