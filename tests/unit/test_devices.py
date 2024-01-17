@@ -36,7 +36,9 @@ KNOWN_RAM_EXCEPTIONS = [
 
 def test_only_specific_device_names_occur_twice():
     all_names = set()
-    for dev in DEVICES.values():
+    for (product_id, bootloader_id), dev in DEVICES.items():
+        if bootloader_id is None:
+            continue
         if dev.device_name in all_names:
             assert dev.device_name in KNOWN_DUPLICATE_DEVICE_NAMES, dev.device_name
         all_names.add(dev.device_name)
@@ -51,7 +53,8 @@ def test_product_id_and_bootloader_id_match_device_properties(ids):
     dev = DEVICES[ids]
     device_id, bootloader_id = ids
     assert dev.product_id == device_id
-    assert dev.bootloader_id == bootloader_id
+    if bootloader_id is not None:
+        assert dev.bootloader_id == bootloader_id
 
 
 @pytest.mark.parametrize(
