@@ -262,10 +262,14 @@ class Stm32Bootloader:
 
     UID_SWAP = [[1, 0], [3, 2], [7, 6, 5, 4], [11, 10, 9, 8]]
 
-    # Part does not support unique ID feature
-    UID_NOT_SUPPORTED = 0
     # stm32loader does not know the address for the unique ID
     UID_ADDRESS_UNKNOWN = -1
+
+    # Flash size can not be read.
+    FLASH_SIZE_UNKNOWN = -2
+
+    # Part does not support unique ID feature
+    UID_NOT_SUPPORTED = 3
 
     FLASH_SIZE_ADDRESS = {
         # ST RM0360 section 27.1 Memory size data register
