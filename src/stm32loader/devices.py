@@ -110,19 +110,19 @@ DEVICE_FAMILIES = {
 }
 
 
-k = 1024
+kB = 1024
 
 
 class Flash:
 
     # RM0090 4 sectors of 16 Kbytes, 1 sector of 64 Kbytes, 7 sectors of 128 Kbytes
-    F2_F4_PAGE_SIZE = (16 * k, 16 * k, 16 * k, 16 * k, 64 * k, 128 * k, 0)
+    F2_F4_PAGE_SIZE = (16 * kB, 16 * kB, 16 * kB, 16 * kB, 64 * kB, 128 * kB, 0)
     # RM0090 4 sectors of 16 Kbytes, 1 sector of 64 Kbytes, 7 sectors of 128 Kbytes... per bank
     F4_DUAL_BANK_PAGE_SIZE = (
-        16 * k, 16 * k, 16 * k, 16 * k, 64 * k, 128 * k, 128 * k, 128 * k, 128 * k,
-        16 * k, 16 * k, 16 * k, 16 * k, 64 * k, 128 * k, 0,
+        16 * kB, 16 * kB, 16 * kB, 16 * kB, 64 * kB, 128 * kB, 128 * kB, 128 * kB, 128 * kB,
+        16 * kB, 16 * kB, 16 * kB, 16 * kB, 64 * kB, 128 * kB, 0,
     )
-    F7_PAGE_SIZE = (32 * k, 32 * k, 32 * k, 32 * k, 128 * k, 256 * k, 0)
+    F7_PAGE_SIZE = (32 * kB, 32 * kB, 32 * kB, 32 * kB, 128 * kB, 256 * kB, 0)
 
     def __init__(self, start=None, end=None, page_size=None, pages_per_sector=None):
         self.start = start
