@@ -585,6 +585,30 @@ class Stm32Bootloader:
 
         return uid
 
+    def detect_device(self):
+        product_id = self.get_id()
+
+        # Look up device details based on ID *without* bootloader ID.
+        self.device = DEVICES.get((product_id, None))
+
+        if not self.device:
+            raise DeviceDetectionError(f"Unknown device type: no type known for product id: 0x{product_id:03X}")
+
+        # Look up the product's bootloader ID.
+        bootloader_id = self.get_bootloader_id()
+
+        # Now we can possibly *refine* the product: look up with product ID *and* bootloader ID.
+        self.device = DEVICES.get((product_id, bootloader_id), self.device)
+
+    def get_bootloader_id(self):
+        if not self.device.bootloader_id_address:
+            return None
+
+        bootloader_id_byte = self.read_memory_data(self.device.bootloader_id_address, 1)
+        bootloader_id = struct.unpack("B", bootloader_id_byte)[0]
+
+        return bootloader_id
+
     @classmethod
     def format_uid(cls, uid):
         """Return a readable string from the given UID."""

@@ -177,17 +177,21 @@ class Stm32Loader:
         """Reset the microcontroller."""
         self.stm32.reset_from_flash()
 
+    def detect_device(self):
+        boot_version = self.stm32.get()
+        self.debug(0, "Bootloader version: 0x%X" % boot_version)
+        self.stm32.detect_device()
+        self.debug(5, 'Bootloader ID: 0x%02X' % self.stm32.device.bootloader_id)
+        self.debug(0, f"Chip ID: 0x{self.stm32.device.product_id:03X}")
+        self.debug(0, f"Chip model: {self.stm32.device.device_name}")
+
     def read_device_id(self):
         """Show product ID and bootloader version."""
         boot_version = self.stm32.get()
         self.debug(0, "Bootloader version: 0x%X" % boot_version)
         device_id = self.stm32.get_id()
 
-        family = self.configuration.family
-        # if not family:
-        #     family =
-
-        if family == "NRG":
+        if self.configuration.family == "NRG":
             # ST AN4872.
             # Three bytes encode metal fix, mask set,
             # BlueNRG-series + flash size.
@@ -202,12 +206,7 @@ class Stm32Loader:
         )
 
     def read_device_uid(self):
-        """Show chip UID and flash size."""
-        family = self.configuration.family
-        if not family:
-            self.debug(0, "Supply --family to see flash size and device UID, e.g: -f F1")
-            return
-
+        """Show chip UID."""
         try:
             flash_size = self.stm32.get_flash_size()
             device_uid = self.stm32.get_uid()
@@ -220,6 +219,18 @@ class Stm32Loader:
 
         device_uid_string = self.stm32.format_uid(device_uid)
         self.debug(0, "Device UID: %s" % device_uid_string)
+
+    def read_flash_size(self):
+        """Show chip flash size."""
+        try:
+            flash_size = self.stm32.get_flash_size()
+        except bootloader.CommandError as e:
+            self.debug(
+                0,
+                "Something was wrong with reading chip family data: " + str(e),
+            )
+            return
+
         self.debug(0, "Flash size: %d KiB" % flash_size)
 
     @staticmethod
