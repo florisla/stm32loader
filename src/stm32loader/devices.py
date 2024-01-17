@@ -27,8 +27,7 @@ class DeviceFamily(enum.Enum):
     W = "W"
 
     # Non-STM devices.
-    NRG1 = "NRG1"
-    NRG2 = "NRG2"
+    NRG = "NRG"
     WIZ = "WIZ"
 
 
@@ -41,7 +40,8 @@ class DeviceFlag(enum.IntEnum):
     # bytes for UID and flash size directly.
     # Reading a whole chunk of 256 bytes at 0x1FFFA700 does work and
     # requires some data extraction.
-    LONG_UID_ACCESS = 8
+    LONG_UID_ACCESS = 8,
+    FORCE_PARITY_NONE = 16
 
 
 class DeviceFamilyInfo:
@@ -101,11 +101,17 @@ DEVICE_FAMILIES = {
     DeviceFamily.WL: DeviceFamilyInfo("WL", uid_address=0x_1FFF_7590, flash_size_address=0x_1FFF_75E0),
     DeviceFamily.U5: DeviceFamilyInfo("U5", ),
     DeviceFamily.W: DeviceFamilyInfo("W", ),
-    # ST BlueNRG has DIE_ID register with PRODUCT, but no UID.
-    # NRG BlueNRG-2 datasheet
-    # Flash page size: 128 pages of 8 * 64 * 4 bytes
-    DeviceFamily.NRG1: DeviceFamilyInfo("NRG1", flash_size_address=0x_4010_0014, flash_page_size=2048),
-    DeviceFamily.NRG2: DeviceFamilyInfo("NRG2", flash_size_address=0x_4010_0014, flash_page_size=2048),
+    # ST BlueNRG series; see ST AN4872 (BlueNRG-1/2) and AN5471 (BlueNRG-LP/LPS). BlueNRG requires parity 'none'.
+    #   Product ID:
+    #       Byte 1: metal fix (masked out)
+    #       Byte 2: mask set (masked out)
+    #       Byte 3: 0xHL
+    #           H: [0] BlueNRG-1, [2] BlueNRG-2, [3] BlueNRG-LP/LPS
+    #           L: [3] 160kB, [B] 192kB, [F] 256kB
+    #   There is no access to peripherals/system memory from bootloader, so flash size and UID can not be read
+    #       NRG-1/2: flash_size_address=0x_4010_0014, uid_address=0x_1000_07F4
+    #       NRG-LP:  flash_size_address=0x_4000_1014, uid_address=0x_1000_1EF0
+    DeviceFamily.NRG: DeviceFamilyInfo("NRG", flags=DeviceFlag.FORCE_PARITY_NONE, flash_page_size=2048),
     DeviceFamily.WIZ: DeviceFamilyInfo("WIZ", ),
 }
 
@@ -357,12 +363,12 @@ DEVICE_DETAILS = [
     DeviceInfo("W", "STM32W", variant="128kB", pid=0x9A8, bid=None, ram=(0x_2000_0200, 0x_2000_2000), system=(0x_0804_0000, 0x_0804_0800), flash=(0x_0800_0000, 0x_0802_0000, 1 * kB, 4), option=(0x_0804_0800, 0x_0804_080F)),
     DeviceInfo("W", "STM32W", variant="256kB", pid=0x9B0, bid=None, ram=(0x_2000_0200, 0x_2000_4000), system=(0x_0804_0000, 0x_0804_0800), flash=(0x_0800_0000, 0x_0804_0000, 2 * kB, 4), option=(0x_0804_0800, 0x_0804_080F)),
 
-    # ST BlueNRG; FIXME: ram/system/flash config?
-    # FIXME bootloader ID address?
-    DeviceInfo("NRG1", "BlueNRG-1", variant="160kB", pid=0x03, bid=None, ram=None, system=None),
-    DeviceInfo("NRG1", "BlueNRG-1", variant="256kB", pid=0x0F, bid=None, ram=None, system=None),
-    DeviceInfo("NRG2", "BlueNRG-1", variant="160kB", pid=0x23, bid=None, ram=None, system=None),
-    DeviceInfo("NRG2", "BlueNRG-1", variant="256kB", pid=0x2F, bid=None, ram=None, system=None),
+    # ST BlueNRG
+    DeviceInfo("NRG", "BlueNRG-1", pid=0x03, bid=None, ram=(0x_2000_0000, 0x_2000_6000), system=(0x_1000_0000, 0x_1000_0800), flash=(0x_1004_0000, 0x_1006_8000, 2 * kB)),
+    DeviceInfo("NRG", "BlueNRG-2", pid=0x2F, bid=None, ram=(0x_2000_0000, 0x_2000_6000), system=(0x_1000_0000, 0x_1000_0800), flash=(0x_1004_0000, 0x_1008_0000, 2 * kB)),
+    # There is a 32kB RAM variant of BlueNRG-LP, but that can't be determined from bootloader
+    DeviceInfo("NRG", "BlueNRG-LP", pid=0x3F, bid=None, ram=(0x_2000_0000, 0x_2001_0000), system=(0x_1000_0000, 0x_1000_1800), flash=(0x_1004_0000, 0x_1008_0000, 2 * kB)),
+    DeviceInfo("NRG", "BlueNRG-LPS", pid=0x3B, bid=None, ram=(0x_2000_0000, 0x_2000_6000), system=(0x_1000_0000, 0x_1000_1800), flash=(0x_1004_0000, 0x_1007_0000, 2 * kB)),
 
     # Wiznet W7500
     DeviceInfo("WIZ", "Wiznet W7500", 0x801, bid=None, ram=None, system=None),

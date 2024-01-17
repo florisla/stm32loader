@@ -26,7 +26,7 @@ import struct
 import time
 from functools import lru_cache, reduce
 
-from stm32loader.devices import DEVICES, DeviceFlag
+from stm32loader.devices import DEVICES, DeviceFamily, DeviceFlag
 
 
 CHIP_IDS = {
@@ -74,8 +74,6 @@ CHIP_IDS = {
     # and byte 2 (mask set).
     # Requires parity None.
     0x000003: "BlueNRG-1 160kB",
-    0x00000F: "BlueNRG-1 256kB",
-    0x000023: "BlueNRG-2 160kB",
     0x00002F: "BlueNRG-2 256kB",
     # STM32F0 RM0091 Table 136. DEV_ID and REV_ID field values
     0x440: "STM32F030x8",
@@ -587,6 +585,10 @@ class Stm32Bootloader:
 
     def detect_device(self):
         product_id = self.get_id()
+
+        # BlueNRG devices have the silicon cut version in the upper bytes of the PID
+        if self.device_family == DeviceFamily.NRG.value:
+            product_id &= 0xFF
 
         # Look up device details based on ID *without* bootloader ID.
         self.device = DEVICES.get((product_id, None))
