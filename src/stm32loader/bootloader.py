@@ -188,13 +188,19 @@ class Stm32Bootloader:
 
     @enum.unique
     class Command(enum.IntEnum):
-        """STM32 native bootloader command values."""
+        """
+        STM32 native bootloader command values.
+
+        Refer to ST AN3155, AN4872, AN2606.
+        """
 
         # pylint: disable=too-few-public-methods
 
-        # See ST AN3155, AN4872
+        # Get bootloader protocol version and supported commands.
         GET = 0x00
+        # Get bootloader protocol version.
         GET_VERSION = 0x01
+        # Get chip/product/device ID. ot available on STM32F103.
         GET_ID = 0x02
         READ_MEMORY = 0x11
         GO = 0x21
@@ -459,7 +465,7 @@ class Stm32Bootloader:
 
     def get_version(self):
         """
-        Return the bootloader version.
+        Return the bootloader protocol version.
 
         Read protection status readout is not yet implemented.
         """
@@ -475,7 +481,7 @@ class Stm32Bootloader:
         return version
 
     def get_id(self):
-        """Send the 'Get ID' command and return the device (model) ID."""
+        """Send the 'Get ID' command and return the chip/product/device ID."""
         self.command(self.Command.GET_ID, "Get ID")
         length = bytearray(self.connection.read())[0]
         id_data = bytearray(self.connection.read(length + 1))
@@ -554,6 +560,25 @@ class Stm32Bootloader:
         flash_size = data[flash_size_lsb_address] + (data[flash_size_lsb_address + 1] << 8)
 
         return flash_size, device_uid
+
+    def get_uid(self):
+        """
+        Send the 'Get UID' command and return the device UID.
+
+        Return UID_NOT_SUPPORTED if the device does not have
+        a UID.
+
+        :return byterary: UID bytes of the device, or 0 or -1 when
+          not available.
+        """
+        uid_address = self.UID_ADDRESS.get(self.device_family, self.UID_ADDRESS_UNKNOWN)
+        if uid_address is None:
+            return self.UID_NOT_SUPPORTED
+        if uid_address == self.UID_ADDRESS_UNKNOWN:
+            return self.UID_ADDRESS_UNKNOWN
+
+        uid = self.read_memory(uid_address, 12)
+        return uid
 
     @classmethod
     def format_uid(cls, uid):
