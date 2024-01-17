@@ -204,6 +204,9 @@ class DeviceInfo:
             name += f"-{self.product_line}"
         return name
 
+    def __repr__(self):
+        return f"DeviceInfo(device_name={self.device_name!r}, variant={self.product_line!r})"
+
 
 @enum.unique
 class Flag(enum.IntEnum):
