@@ -461,10 +461,10 @@ class Stm32Bootloader:
         length = bytearray(self.connection.read())[0]
         version = bytearray(self.connection.read())[0]
         self.debug(10, "    Bootloader version: " + hex(version))
-        data = bytearray(self.connection.read(length))
-        if self.Command.EXTENDED_ERASE in data:
-            self.extended_erase = True
-        self.debug(10, "    Available commands: " + ", ".join(hex(b) for b in data))
+        supported_commands = bytearray(self.connection.read(length))
+        self.supported_commands = {command: True for command in supported_commands}
+        self.extended_erase = self.Command.EXTENDED_ERASE in self.supported_commands
+        self.debug(10, "    Available commands: " + ", ".join(hex(b) for b in self.supported_commands))
         self._wait_for_ack("0x00 end")
         return version
 
