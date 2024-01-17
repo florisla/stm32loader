@@ -404,7 +404,7 @@ class Stm32Bootloader:
     def debug(self, level, message):
         """Print the given message if its level is low enough."""
         if self.verbosity >= level:
-            print(message, file=sys.stderr)
+            print(message)
 
     def reset_from_system_memory(self):
         """Reset the MCU with boot0 enabled to enter the bootloader."""
@@ -428,7 +428,7 @@ class Stm32Bootloader:
 
         for attempt in range(self.SYNCHRONIZE_ATTEMPTS):
             if attempt:
-                print("Bootloader activation timeout -- retrying", file=sys.stderr)
+                print("Bootloader activation timeout -- retrying")
             self.write(self.Command.SYNCHRONIZE)
             read_data = bytearray(self.connection.read())
 
@@ -732,7 +732,7 @@ class Stm32Bootloader:
 
         previous_timeout_value = self.connection.timeout
         self.connection.timeout = 30
-        print("Extended erase (0x44), this can take ten seconds or more", file=sys.stderr)
+        print("Extended erase (0x44), this can take ten seconds or more")
         try:
             self._wait_for_ack("0x44 erasing failed")
         finally:

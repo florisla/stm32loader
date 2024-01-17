@@ -48,7 +48,7 @@ class Stm32Loader:
     def debug(self, level, message):
         """Log a message to stderror if its level is low enough."""
         if self.configuration.verbosity >= level:
-            print(message, file=sys.stderr)
+            print(message)
 
     def parse_arguments(self, arguments):
         """Parse the list of command-line arguments."""
@@ -160,7 +160,7 @@ class Stm32Loader:
             read_data = self.stm32.read_memory_data(self.configuration.address, len(binary_data))
             try:
                 bootloader.Stm32Bootloader.verify_data(read_data, binary_data)
-                print("Verification OK", file=sys.stderr)
+                print("Verification OK")
             except bootloader.DataMismatchError as e:
                 print("Verification FAILED: %s" % e, file=sys.stderr)
                 sys.exit(1)
