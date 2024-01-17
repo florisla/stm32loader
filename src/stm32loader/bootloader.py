@@ -806,7 +806,7 @@ class Stm32Bootloader:
         """
         data = bytearray()
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
-        self.debug(5, "Read %7d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address))
+        self.debug(10, "Read %7d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address))
         with self.show_progress("Reading", maximum=chunk_count) as progress_bar:
             while length:
                 read_length = min(length, self.data_transfer_size)
