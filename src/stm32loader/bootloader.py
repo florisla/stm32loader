@@ -360,7 +360,7 @@ class Stm32Bootloader:
 
     SYNCHRONIZE_ATTEMPTS = 2
 
-    def __init__(self, connection, device_family=None, verbosity=5, show_progress=None):
+    def __init__(self, connection, device=None, device_family=None, verbosity=5, show_progress=None):
         """
         Construct the Stm32Bootloader object.
 
@@ -385,6 +385,7 @@ class Stm32Bootloader:
         self.data_transfer_size = self.DATA_TRANSFER_SIZE.get(device_family or "default")
         self.flash_page_size = self.FLASH_PAGE_SIZE.get(device_family or "default")
         self.device_family = device_family or "F1"
+        self.device = device
 
     def write(self, *data):
         """Write the given data to the MCU."""
