@@ -209,9 +209,22 @@ class DeviceInfo:
 
 
 @enum.unique
-class Flag(enum.IntEnum):
-    OBL_LAUNCH = 1
-    CLEAR_PEMPTY = 2
+class BootloaderSerialPeripherals(enum.Enum):
+    # AN2606
+    USART = 1
+    DUAL_USART = 2
+    UART_CAN_DFU = 3
+    USART_DFU = 4
+    USART_I2C = 5
+    I2C = 6
+    I2C_CAN_DFU_I2C = 7
+    I2C_SPI = 8
+    USART_CAN_FDCAN_DFU_I2C_SPI = 9
+    USART_DFU_FDCAN_SPI = 10
+    USART_I2C_SPI = 11
+    USART_SPI = 12
+    USART_DFU_I2C_SPI = 13
+    USART_DFU_I2C_I3C_FDCAN_SPI = 14
 
 
 DEVICE_DETAILS = [
