@@ -48,59 +48,65 @@ class DeviceFamilyInfo:
 
     def __init__(
             self,
+            name,
             uid_address=None,
             flash_size_address=None,
             flash_page_size=1024,
             transfer_size=256,
             mass_erase=True,
             option_bytes=None,
+            bootloader_id_address=None,
+            flags=DeviceFlag.NONE,
     ):
+        self.name = name
         self.uid_address = uid_address
         self.flash_size_address = flash_size_address
         self.flash_page_size = flash_page_size
         self.transfer_size = transfer_size
         self.mass_erase = mass_erase
         self.option_bytes = option_bytes
+        self.bootloader_id_address = bootloader_id_address
+        self.family_default_flags = flags
 
 
 DEVICE_FAMILIES = {
-    DeviceFamily.C0: DeviceFamilyInfo(),
+    DeviceFamily.C0: DeviceFamilyInfo("C0", bootloader_id_address=0x_1FFF_17FE),
     # RM0360
-    DeviceFamily.F0: DeviceFamilyInfo(flash_size_address=0x_1FFF_F7CC, option_bytes=(0x_1FFF_F800, 0x_1FFF_F80F)),
+    DeviceFamily.F0: DeviceFamilyInfo("F0", flash_size_address=0x_1FFF_F7CC, option_bytes=(0x_1FFF_F800, 0x_1FFF_F80F)),
     # RM0008
-    DeviceFamily.F1: DeviceFamilyInfo(uid_address=0x_1FFF_F7E8, flash_size_address=0x_1FFF_F7E0, option_bytes=(0x_1FFF_F800, 0x_1FFF_F80F)),
-    DeviceFamily.F2: DeviceFamilyInfo(option_bytes=(0x_1FFF_C000, 0x_1FFF_C00F)),
+    DeviceFamily.F1: DeviceFamilyInfo("F1", uid_address=0x_1FFF_F7E8, flash_size_address=0x_1FFF_F7E0, option_bytes=(0x_1FFF_F800, 0x_1FFF_F80F)),
+    DeviceFamily.F2: DeviceFamilyInfo("F2", option_bytes=(0x_1FFF_C000, 0x_1FFF_C00F), bootloader_id_address=0x_1FFF_77DE),
     # RM0366, RM0365, RM0316, RM0313, RM4510
-    DeviceFamily.F3: DeviceFamilyInfo(uid_address=0x_1FFF_F7AC, flash_size_address=0x_1FFF_F7CC, flash_page_size=2048),
+    DeviceFamily.F3: DeviceFamilyInfo("F3", uid_address=0x_1FFF_F7AC, flash_size_address=0x_1FFF_F7CC, flash_page_size=2048, bootloader_id_address=0x_1FFF_F796),
     # RM0090
-    DeviceFamily.F4: DeviceFamilyInfo(uid_address=0x_1FFF_7A10, flash_size_address=0x_1FFF_7A22),
+    DeviceFamily.F4: DeviceFamilyInfo("F4", uid_address=0x_1FFF_7A10, flash_size_address=0x_1FFF_7A22, bootloader_id_address=0x_1FFF_76DE, flags=DeviceFlag.LONG_UID_ACCESS),
     # RM0385
-    DeviceFamily.F7: DeviceFamilyInfo(uid_address=0x_1FF0_F420, flash_size_address=0x_1FF0_F442),
+    DeviceFamily.F7: DeviceFamilyInfo("F7", uid_address=0x_1FF0_F420, flash_size_address=0x_1FF0_F442, bootloader_id_address=0x_1FF0_EDBE),
     # RM0444
-    DeviceFamily.G0: DeviceFamilyInfo(uid_address=0x_1FFF_7590, flash_size_address=0x_1FFF_75E0),
-    DeviceFamily.G4: DeviceFamilyInfo(),
-    DeviceFamily.H5: DeviceFamilyInfo(),
+    DeviceFamily.G0: DeviceFamilyInfo("G0", uid_address=0x_1FFF_7590, flash_size_address=0x_1FFF_75E0),
+    DeviceFamily.G4: DeviceFamilyInfo("G4", bootloader_id_address=0x_1FFF_6FFE),
+    DeviceFamily.H5: DeviceFamilyInfo("H5", ),
     # RM0433
-    DeviceFamily.H7: DeviceFamilyInfo(uid_address=0x_1FF1_E800, flash_size_address=0x_1FF1_E880, flash_page_size=128 * 1024),
+    DeviceFamily.H7: DeviceFamilyInfo("H7", uid_address=0x_1FF1_E800, flash_size_address=0x_1FF1_E880, flash_page_size=128 * 1024),
     # FIXME TWO RMs?
     # RM0451, RM4510
-    DeviceFamily.L0: DeviceFamilyInfo(uid_address=0x_1FF8_0050, flash_size_address=0x_1FF8_007C, transfer_size=128, flash_page_size=128, mass_erase=False),
-    DeviceFamily.L1: DeviceFamilyInfo(mass_erase=False),
+    DeviceFamily.L0: DeviceFamilyInfo("L0", uid_address=0x_1FF8_0050, flash_size_address=0x_1FF8_007C, transfer_size=128, flash_page_size=128, mass_erase=False, flags=DeviceFlag.LONG_UID_ACCESS),
+    DeviceFamily.L1: DeviceFamilyInfo("L1", mass_erase=False),
     # RM0394
-    DeviceFamily.L4: DeviceFamilyInfo(uid_address=0x_1FFF_7590, flash_size_address=0x_1FFF_75E0),
-    DeviceFamily.L5: DeviceFamilyInfo(),
-    DeviceFamily.WBA: DeviceFamilyInfo(),
-    DeviceFamily.WB: DeviceFamilyInfo(),
+    DeviceFamily.L4: DeviceFamilyInfo("L4", uid_address=0x_1FFF_7590, flash_size_address=0x_1FFF_75E0, bootloader_id_address=0x_1FFF_6FFE),
+    DeviceFamily.L5: DeviceFamilyInfo("L5", ),
+    DeviceFamily.WBA: DeviceFamilyInfo("WBA", ),
+    DeviceFamily.WB: DeviceFamilyInfo("WB", ),
     # RM0453
-    DeviceFamily.WL: DeviceFamilyInfo(uid_address=0x_1FFF_7590, flash_size_address=0x_1FFF_75E0),
-    DeviceFamily.U5: DeviceFamilyInfo(),
-    DeviceFamily.W: DeviceFamilyInfo(),
+    DeviceFamily.WL: DeviceFamilyInfo("WL", uid_address=0x_1FFF_7590, flash_size_address=0x_1FFF_75E0),
+    DeviceFamily.U5: DeviceFamilyInfo("U5", ),
+    DeviceFamily.W: DeviceFamilyInfo("W", ),
     # ST BlueNRG has DIE_ID register with PRODUCT, but no UID.
     # NRG BlueNRG-2 datasheet
     # Flash page size: 128 pages of 8 * 64 * 4 bytes
-    DeviceFamily.NRG1: DeviceFamilyInfo(flash_size_address=0x_4010_0014, flash_page_size=2048),
-    DeviceFamily.NRG2: DeviceFamilyInfo(flash_size_address=0x_4010_0014, flash_page_size=2048),
-    DeviceFamily.WIZ: DeviceFamilyInfo(),
+    DeviceFamily.NRG1: DeviceFamilyInfo("NRG1", flash_size_address=0x_4010_0014, flash_page_size=2048),
+    DeviceFamily.NRG2: DeviceFamilyInfo("NRG2", flash_size_address=0x_4010_0014, flash_page_size=2048),
+    DeviceFamily.WIZ: DeviceFamilyInfo("WIZ", ),
 }
 
 
