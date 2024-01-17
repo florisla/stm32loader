@@ -140,8 +140,8 @@ class Flash:
 
 class DeviceInfo:
 
-    def __init__(self, device_family, device_name, pid, bid, variant=None, line=None, ram=None, flash=None, system=None, option=None, flags=None):
-        self.device_family = DeviceFamily[device_family]
+    def __init__(self, device_family, device_name, pid, bid, variant=None, line=None, ram=None, flash=None, system=None, option=None, bootloader_id_address=None, flags=DeviceFlag.NONE):
+        self.family = DEVICE_FAMILIES[DeviceFamily[device_family]]
         self.device_name = device_name
         self.product_id = pid
         self.bootloader_id = bid
@@ -151,7 +151,8 @@ class DeviceInfo:
         self.flash = Flash(*(flash or []))
         self.system_memory = system
         self.option_bytes = option
-        self.flags = flags
+        self.flags = flags | self.family.family_default_flags
+        self.bootloader_id_address = bootloader_id_address or self.family.bootloader_id_address
 
     @property
     def ram_size(self):
