@@ -114,6 +114,11 @@ class MissingDependencyError(Stm32LoaderError):
     """Exception: required dependency is missing."""
 
 
+class DeviceDetectionError(Stm32LoaderError):
+    """Exception: could not detect device type."""
+
+
+
 class ShowProgress:
     """
     Show progress through a progress bar, as a context manager.
