@@ -36,6 +36,8 @@ CHIP_IDS = {
     # 64 to 128 KiB
     0x410: "STM32F10x Medium-density",
     0x420: "STM32F10x Medium-density value line",
+    0x443: "STM32C011xx",
+    0x453: "STM32C031xx",
     0x460: "STM32G0x1",
     # 256 to 512 KiB (5128 Kbyte is probably a typo?)
     0x414: "STM32F10x High-density",
@@ -237,6 +239,8 @@ class Stm32Bootloader:
         "L4": 0x1FFF7590,
         # ST RM0451 25.2 Unique device ID register (96 bits)
         "L0": 0x1FF80050,
+        # ST RM0490 section 27.1 Unique device ID register
+        "C0": 0x1FFF7550,
         # ST RM0444 section 38.1 Unique device ID register
         "G0": 0x1FFF7590,
         # ST RM0453 section 39.1.1 Unique device ID register
@@ -276,6 +280,8 @@ class Stm32Bootloader:
         "L4": 0x1FFF75E0,
         # ST RM4510 25.1 Memory size register
         "L0": 0x1FF8007C,
+        # ST RM0490 section 27.2 Flash memory size data register
+        "C0": 0x1FFF75A0,
         # ST RM0444 section 38.2 Flash memory size data register
         "G0": 0x1FFF75E0,
         # ST RM0453 section 39.1.2 Flash size data register
@@ -294,6 +300,7 @@ class Stm32Bootloader:
         "F7": 256,
         "L4": 256,
         "L0": 128,
+        "C0": 256,
         "G0": 256,
         "WL": 256,
         "NRG": 256,
@@ -325,6 +332,8 @@ class Stm32Bootloader:
         "L4": 1024,
         # ST RM4510 25.1 Memory size register
         "L0": 128,
+        # ST RM0490 section 27.2 Flash memory size data register
+        "C0": 1024,
         # ST RM0444 section 38.2 Flash memory size data register
         "G0": 1024,
         "WL": 1024,
