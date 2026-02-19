@@ -4,7 +4,6 @@ from shutil import rmtree
 
 import nox
 
-
 DEFAULT_PYTHON_VERSION = "3.11"
 ALL_PYTHON_VERSIONS = ["3.9", "3.10", "3.11"]
 
@@ -45,5 +44,4 @@ def lint(session):
     session.run("pylint", "stm32loader")
 
     session.install("flake8", "flake8-isort")
-    # not sure why this needs an explicit --config
-    session.run("flake8", "stm32loader", "--config=setup.cfg")
+    session.run("flake8", "stm32loader")
