@@ -19,7 +19,6 @@
 
 """Talk to an STM32 native bootloader (see ST AN3155)."""
 
-
 import enum
 import math
 import operator
@@ -339,7 +338,7 @@ class Stm32Bootloader:
         # ST BlueNRG-2 data sheet: 128 pages of 8 * 64 * 4 bytes
         "NRG": 2048,
         # ST RM0440 section 3.3.1 Flash memory organization
-        "G4": 2048, # this is valid only for dual bank mode
+        "G4": 2048,  # this is valid only for dual bank mode
         # ST RM0433 section 4.2 FLASH main features
         "H7": 128 * 1024,
     }

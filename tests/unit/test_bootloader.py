@@ -1,11 +1,11 @@
 """Unit tests for the Stm32Loader class."""
 
-import pytest
-
 from unittest.mock import MagicMock
 
+import pytest
+
 from stm32loader import bootloader as Stm32
-from stm32loader.bootloader import Stm32Bootloader, PageIndexError
+from stm32loader.bootloader import PageIndexError, Stm32Bootloader
 
 # pylint: disable=missing-docstring, redefined-outer-name
 

@@ -20,19 +20,16 @@
 
 """Flash firmware to STM32 microcontrollers over a serial connection."""
 
-
 import sys
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 
 try:
     from progress.bar import ChargingBar as progress_bar
 except ImportError:
     progress_bar = None
 
-from stm32loader import args
-from stm32loader import hexfile
-from stm32loader import bootloader
+from stm32loader import args, bootloader, hexfile
 from stm32loader.uart import SerialConnection
 
 

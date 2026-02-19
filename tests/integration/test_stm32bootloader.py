@@ -12,10 +12,10 @@ supply the following as argument to pytest:
 
 """
 
+import pytest
+
 from stm32loader.bootloader import Stm32Bootloader
 from stm32loader.uart import SerialConnection
-
-import pytest
 
 SERIAL_PORT = "COM7"
 BAUD_RATE = 9600

@@ -8,7 +8,6 @@ import sys
 
 from stm32loader import __version__
 
-
 DEFAULT_VERBOSITY = 5
 
 
