@@ -84,7 +84,7 @@ DEVICE_FAMILIES = {
     DeviceFamily.F7: DeviceFamilyInfo("F7", uid_address=0x_1FF0_F420, flash_size_address=0x_1FF0_F442, bootloader_id_address=0x_1FF0_EDBE),
     # RM0444
     DeviceFamily.G0: DeviceFamilyInfo("G0", uid_address=0x_1FFF_7590, flash_size_address=0x_1FFF_75E0),
-    DeviceFamily.G4: DeviceFamilyInfo("G4", bootloader_id_address=0x_1FFF_6FFE),
+    DeviceFamily.G4: DeviceFamilyInfo("G4", uid_address=0x1FFF7590, flash_size_address=0x1FFF75E0, bootloader_id_address=0x_1FFF_6FFE),
     DeviceFamily.H5: DeviceFamilyInfo("H5", ),
     # RM0433
     DeviceFamily.H7: DeviceFamilyInfo("H7", uid_address=0x_1FF1_E800, flash_size_address=0x_1FF1_E880, flash_page_size=128 * 1024),
