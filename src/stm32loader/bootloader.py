@@ -184,7 +184,6 @@ class Stm32Bootloader:
         """STM32 native bootloader command values."""
 
         # pylint: disable=too-few-public-methods
-        # FIXME turn into intenum
 
         # See ST AN3155, AN4872
         GET = 0x00
@@ -210,7 +209,6 @@ class Stm32Bootloader:
         """STM32 native bootloader reply status codes."""
 
         # pylint: disable=too-few-public-methods
-        # FIXME turn into intenum
 
         # See ST AN3155, AN4872
         ACK = 0x79
