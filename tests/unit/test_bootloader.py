@@ -1,4 +1,3 @@
-"""Unit tests for the Stm32Loader class."""
 
 from unittest.mock import MagicMock
 
@@ -224,21 +223,21 @@ def test_verify_data_with_non_identical_data_raises_verify_error_complaining_abo
 
 
 @pytest.mark.parametrize(
-    "pid_bid", [(0x412, None), (0x432, 0x50), (0x452, 0x90)]
+    "pid_bid, uid_address",
+    [
+        ((0x412, None), 0x_1FFF_F7E8),
+        ((0x432, 0x50), 0x_1FFF_F7AC),
+        ((0x452, 0x90), 0x_1FF0_F420),
+    ],
+    ids=("F1", "F3", "F7"),
 )
-def test_get_uid_for_known_device_reads_at_correct_address(connection, pid_bid):
+def test_get_uid_for_known_device_reads_at_correct_address(connection, pid_bid, uid_address):
     device = DEVICES.get(pid_bid)
     bootloader = Stm32Bootloader(connection, device=device)
-
     bootloader.read_memory = MagicMock()
-    bootloader.get_uid()
 
-    uid_address = {
-        (0x412, None): 0x_1FFF_F7E8,
-        (0x432, 0x50): 0x_1FFF_F7AC,
-        (0x452, 0x90): 0x_1FF0_F420,
-    }[pid_bid]
-    bootloader.read_memory.assert_called_once_with(uid_address)
+    bootloader.get_uid()
+    bootloader.read_memory.assert_called_once_with(uid_address, 12)
 
 
 def test_get_uid_for_family_without_uid_returns_uid_not_supported(connection):
