@@ -135,7 +135,8 @@ def test_stm32flash_device_names_match(device):
             break
 
     # Some devices don't exist in STM32Flash.
-    if not stm32flash_device and device.product_id in [0x443, 0x453, 0x474, 0x484, 0x492, 0x455, 0x481, 0x003, 0x00F, 0x0023, 0x002F, 0x801]:
+    stm32loader_only = (0x443, 0x453, 0x474, 0x484, 0x492, 0x455, 0x481, 0x003, 0x00F, 0x0023, 0x002F, 0x801, 0x03B, 0x03F)
+    if not stm32flash_device and device.product_id in stm32loader_only:
         return
 
     # Known / reviewed deviating names.
