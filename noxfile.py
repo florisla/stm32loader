@@ -17,7 +17,7 @@ DEFAULT_PYTHON_VERSION = "3.14"
 
 
 @session(python=PYTHON_VERSIONS, uv_groups=("test", "hex"))
-def tests(session: Session) -> None:
+def test(session: Session) -> None:
     """Execute unit tests."""
     session.run("pytest")
 

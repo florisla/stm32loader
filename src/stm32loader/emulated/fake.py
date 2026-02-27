@@ -1,17 +1,27 @@
+"""Fake bootloader connection for testing purposes."""
+
 import struct
 
 from stm32loader.bootloader import Stm32Bootloader
 
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-few-public-methods
+# pylint: disable=missing-function-docstring
+
 
 class FakeConnection:
+    """Emulate a bootloader connection."""
 
     ACK = Stm32Bootloader.Reply.ACK.value
     Command = Stm32Bootloader.Command
 
     COMMAND_RESPONSES = {
         # Return length, bootloader version, commands
-        # Version 5, 0x0=GET 0x01=GET_VERSION 0x02=GET_ID 0x11=READ_MEMORY 0x31=WRITE_MEMORY
-        # 0x43=ERASE 0x44=EXTENDED_ERASE
+        # Version 5, 0x0=GET 0x01=GET_VERSION 0x02=GET_ID
+        #   0x11=READ_MEMORY 0x31=WRITE_MEMORY
+        #   0x43=ERASE 0x44=EXTENDED_ERASE
         Command.GET: [7, 0x05, [0x0, 0x01, 0x02, 0x11, 0x31, 0x43, 0x44], ACK],
         # Product ID: 0x422
         Command.GET_ID: [1, [0x04, 0x22]],
@@ -20,16 +30,12 @@ class FakeConnection:
     READ_RESPONSES = {
         # Read flash size, F1.
         (0x_1FFF_F7E0, 2): [[0x00, 0x01]],
-
         # Read flash size, F3.
         (0x_1FFF_F7CC, 2): [[0x00, 0x01]],
-
         # Read device UID, F1.
-        (0x_1FFF_F7E8, 12):  [[1, 0, 3, 2, 7, 6, 5, 4, 0xB, 0xA, 9, 8]],
-
+        (0x_1FFF_F7E8, 12): [[1, 0, 3, 2, 7, 6, 5, 4, 0xB, 0xA, 9, 8]],
         # Read device UID, F3.
         (0x_1FFF_F7AC, 12): [[1, 0, 3, 2, 7, 6, 5, 4, 0xB, 0xA, 9, 8]],
-
         # Read Bootloader ID.
         (0x_1FFF_F796, 1): [0x41],
     }
@@ -79,7 +85,9 @@ class FakeConnection:
                 if self.flash_offset <= address < self.flash_offset + self.flash_size:
                     # Return flash data.
                     flash_offset = address - self.flash_offset
-                    self.next_return.append(list(self.flash_memory[flash_offset: flash_offset + length]))
+                    self.next_return.append(
+                        list(self.flash_memory[flash_offset : flash_offset + length])
+                    )
                 else:
                     self.next_return.extend(self.READ_RESPONSES[(address, length)])
             elif command_value == self.Command.EXTENDED_ERASE.value:
@@ -95,13 +103,15 @@ class FakeConnection:
                 size_bytes = yield
                 byte_count = struct.unpack("B", size_bytes)[0] + 1
                 data = yield
-                crc = yield
+                _crc = yield
 
-                assert len(data) == byte_count, f"Length does not match byte count: {len(data)} vs {byte_count}"
+                assert len(data) == byte_count, (
+                    f"Length does not match byte count: {len(data)} vs {byte_count}"
+                )
 
                 # Record data in flash memory.
                 flash_offset = address - 0x_0800_0000
-                self.flash_memory[flash_offset: flash_offset + byte_count] = data
+                self.flash_memory[flash_offset : flash_offset + byte_count] = data
             else:
                 raise NotImplementedError()
 
@@ -109,7 +119,7 @@ class FakeConnection:
         # Send to coroutine.
         self.receiver.send(data)
 
-    def read(self, length=1):
+    def read(self, length=1):  # pylint: disable=unused-argument
         if self.next_return:
             value = self.next_return.pop(0)
             if isinstance(value, int):
@@ -120,6 +130,7 @@ class FakeConnection:
 
 
 class FakeConfiguration:
+    """Represent a configuration for test purposes."""
 
     def __init__(self, erase, write, verify, firmware_file, family=None):
         self.erase = erase
@@ -133,4 +144,3 @@ class FakeConfiguration:
         self.address = 0x_0800_0000
         self.go_address = None
         self.family = family
-

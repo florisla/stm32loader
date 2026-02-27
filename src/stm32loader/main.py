@@ -32,7 +32,7 @@ except ImportError:
     progress_bar = None
 
 from stm32loader import args, bootloader, hexfile
-from stm32loader.devices import DEVICE_FAMILIES, DeviceFlag, DeviceFamily
+from stm32loader.device_family import DEVICE_FAMILIES, DeviceFamily, DeviceFlag
 from stm32loader.uart import SerialConnection
 
 
@@ -152,7 +152,11 @@ class Stm32Loader:
                     start_address = self.configuration.address
                     end_address = self.configuration.address + self.configuration.length
                     pages = self.stm32.pages_from_range(start_address, end_address)
-                    self.debug(0, f"Performing partial erase (0x{start_address:X} - 0x{end_address:X}, {len(pages)} pages)... ")
+                    self.debug(
+                        0,
+                        f"Performing partial erase (0x{start_address:X} - 0x{end_address:X},"
+                        f" {len(pages)} pages)... ",
+                    )
                     self.stm32.erase_memory(pages)
 
             except bootloader.CommandError:
@@ -187,7 +191,8 @@ class Stm32Loader:
         """Reset the microcontroller."""
         self.stm32.reset_from_flash()
 
-    def detect_device(self):
+    def detect_device(self) -> None:
+        """Detect the STM32 device type by querying bootloader and regs."""
         boot_version = self.stm32.get()
         self.debug(0, "Bootloader version: 0x%X" % boot_version)
         self.stm32.detect_device()

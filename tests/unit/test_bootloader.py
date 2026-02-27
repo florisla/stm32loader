@@ -1,3 +1,4 @@
+"""Unit tests for the Stm32Loader class."""
 
 from unittest.mock import MagicMock
 
@@ -191,7 +192,7 @@ def test_extended_erase_memory_with_pages_sends_two_byte_sector_count(bootloader
     assert write.data_was_written(b"\x00\x03")
 
 
-def test_extended_erase_memory_with_pages_sends_two_byte_sector_addresses_with_single_byte_checksum(
+def test_extended_erase_with_pages_sends_two_byte_sector_addresses_with_single_byte_checksum(
     bootloader, write
 ):
     bootloader.extended_erase_memory([0x01, 0x02, 0x04, 0x0FF0])
@@ -207,14 +208,14 @@ def test_verify_data_with_identical_data_passes():
     Stm32Bootloader.verify_data(b"\x05", b"\x05")
 
 
-def test_verify_data_with_different_byte_count_raises_verify_error_complaining_about_length_difference():
+def test_verify_different_byte_count_raises_verify_error_complaining_about_length_difference():
     with pytest.raises(
         Stm32.DataMismatchError, match=r"Data length does not match.*2.*vs.*1.*bytes"
     ):
         Stm32Bootloader.verify_data(b"\x05\x06", b"\x01")
 
 
-def test_verify_data_with_non_identical_data_raises_verify_error_complaining_about_mismatched_byte():
+def test_verify_non_identical_data_raises_verify_error_complaining_about_mismatched_byte():
     with pytest.raises(
         Stm32.DataMismatchError,
         match=r"Verification data does not match read data.*mismatch.*0x1.*0x6.*0x7",
@@ -241,7 +242,7 @@ def test_get_uid_for_known_device_reads_at_correct_address(connection, pid_bid, 
 
 
 def test_get_uid_for_family_without_uid_returns_uid_not_supported(connection):
-    device = DEVICES.get(( 0x443, 0x51))
+    device = DEVICES.get((0x443, 0x51))
     bootloader = Stm32Bootloader(connection, device=device)
     assert bootloader.UID_NOT_SUPPORTED == bootloader.get_uid()
 
@@ -275,7 +276,10 @@ def test_get_flash_size_and_uid_for_exception_families_returns_size_and_uid(conn
     [
         (Stm32Bootloader.UID_NOT_SUPPORTED, "UID not supported in this part"),
         (Stm32Bootloader.UID_ADDRESS_UNKNOWN, "UID address unknown"),
-        (bytearray(b"\x12\x34\x56\x78\x9a\xbc\xde\x01\x12\x34\x56\x78"), "3412-7856-01DEBC9A-78563412"),
+        (
+            bytearray(b"\x12\x34\x56\x78\x9a\xbc\xde\x01\x12\x34\x56\x78"),
+            "3412-7856-01DEBC9A-78563412",
+        ),
     ],
 )
 def test_format_uid_returns_correct_string(bootloader, uid_string):

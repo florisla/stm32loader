@@ -26,8 +26,8 @@ import struct
 import time
 from functools import lru_cache, reduce
 
-from stm32loader.devices import DEVICES, DeviceFamily, DeviceFlag
-
+from stm32loader.device_family import DeviceFamily, DeviceFlag
+from stm32loader.devices import DEVICES
 
 CHIP_IDS = {
     # see ST AN2606 Table 136 Bootloader device-dependent parameters
@@ -116,7 +116,6 @@ class DeviceDetectionError(Stm32LoaderError):
     """Exception: could not detect device type."""
 
 
-
 class ShowProgress:
     """
     Show progress through a progress bar, as a context manager.
@@ -179,7 +178,7 @@ class ShowProgress:
         self.progress_bar.finish()
 
 
-class Stm32Bootloader:
+class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
     """Talk to the STM32 native bootloader."""
 
     # pylint: disable=too-many-public-methods
@@ -358,7 +357,9 @@ class Stm32Bootloader:
 
     SYNCHRONIZE_ATTEMPTS = 2
 
-    def __init__(self, connection, device=None, device_family=None, verbosity=5, show_progress=None):
+    def __init__(  # pylint: disable=too-many-positional-arguments,too-many-arguments
+        self, connection, device=None, device_family=None, verbosity=5, show_progress=None
+    ):
         """
         Construct the Stm32Bootloader object.
 
@@ -462,7 +463,9 @@ class Stm32Bootloader:
         supported_commands = bytearray(self.connection.read(length))
         self.supported_commands = {command: True for command in supported_commands}
         self.extended_erase = self.Command.EXTENDED_ERASE in self.supported_commands
-        self.debug(10, "    Available commands: " + ", ".join(hex(b) for b in self.supported_commands))
+        self.debug(
+            10, "    Available commands: " + ", ".join(hex(b) for b in self.supported_commands)
+        )
         self._wait_for_ack("0x00 end")
         return version
 
@@ -583,10 +586,12 @@ class Stm32Bootloader:
 
         return uid
 
-    def detect_device(self):
+    def detect_device(self) -> None:
+        """Detect the device type and store in `device`."""
         product_id = self.get_id()
 
-        # BlueNRG devices have the silicon cut version in the upper bytes of the PID
+        # BlueNRG devices have the silicon cut version in the
+        # upper bytes of the PID.
         if self.device_family == DeviceFamily.NRG.value:
             product_id &= 0xFF
 
@@ -594,15 +599,19 @@ class Stm32Bootloader:
         self.device = DEVICES.get((product_id, None))
 
         if not self.device:
-            raise DeviceDetectionError(f"Unknown device type: no type known for product id: 0x{product_id:03X}")
+            raise DeviceDetectionError(
+                f"Unknown device type: no type known for product id: 0x{product_id:03X}"
+            )
 
         # Look up the product's bootloader ID.
         bootloader_id = self.get_bootloader_id()
 
-        # Now we can possibly *refine* the product: look up with product ID *and* bootloader ID.
+        # Now we can possibly *refine* the product: look up
+        # with product ID *and* bootloader ID.
         self.device = DEVICES.get((product_id, bootloader_id), self.device)
 
     def get_bootloader_id(self):
+        """Get the bootloader ID by reading the 'bootloader ID' register."""
         if not self.device.bootloader_id_address:
             return None
 
@@ -808,7 +817,9 @@ class Stm32Bootloader:
         """
         data = bytearray()
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
-        self.debug(10, "Read %7d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address))
+        self.debug(
+            10, "Read %7d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address)
+        )
         with self.show_progress("Reading", maximum=chunk_count) as progress_bar:
             while length:
                 read_length = min(length, self.data_transfer_size)
@@ -832,7 +843,9 @@ class Stm32Bootloader:
         length = len(data)
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
         offset = 0
-        self.debug(5, "Write %6d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address))
+        self.debug(
+            5, "Write %6d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address)
+        )
 
         with self.show_progress("Writing", maximum=chunk_count) as progress_bar:
             while length:
