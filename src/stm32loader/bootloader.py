@@ -618,7 +618,7 @@ class Stm32Bootloader:
           Set to None to trigger global mass erase.
         """
         if self.extended_erase:
-            # Use erase with two-byte addresses.
+            # Use erase with two-byte addresses instead.
             self.extended_erase_memory(pages)
             return
 
@@ -631,6 +631,7 @@ class Stm32Bootloader:
             if page_count > 255:
                 raise PageIndexError("Can not erase more than 255 pages for L0 family.")
             pages = range(page_count)
+
         if pages:
             # page erase, see ST AN3155
             if len(pages) > 255:
@@ -641,9 +642,11 @@ class Stm32Bootloader:
             page_count = len(pages) - 1
             page_numbers = bytearray(pages)
             checksum = reduce(operator.xor, page_numbers, page_count)
+            self.debug(5, f"Flash erase {page_count} pages from {pages[0]} to {pages[-1]}")
             self.write(page_count, page_numbers, checksum)
         else:
             # global erase: n=255 (page count)
+            self.debug(5, "Flash global erase")
             self.write(255, 0)
 
         self._wait_for_ack("0x43 erase failed")
@@ -667,6 +670,7 @@ class Stm32Bootloader:
             pages = list(range(0, (flash_size * 1024) // self.flash_page_size))
 
         self.command(self.Command.EXTENDED_ERASE, "Extended erase memory")
+
         if pages:
             # page erase, see ST AN3155
             if len(pages) > 65535:
@@ -681,10 +685,12 @@ class Stm32Bootloader:
                 struct.pack_into(">H", page_bytes, i * 2, page)
             checksum = reduce(operator.xor, page_count_bytes)
             checksum = reduce(operator.xor, page_bytes, checksum)
+            self.debug(5, f"Flash erase {page_count + 1} pages from {pages[0]} to {pages[-1]}")
             self.write(page_count_bytes, page_bytes, checksum)
         else:
             # global mass erase: n=0xffff (page count) + checksum
             # TO DO: support 0xfffe bank 1 erase / 0xfffe bank 2 erase
+            self.debug(5, "Flash global erase")
             self.write(b"\xff\xff\x00")
 
         previous_timeout_value = self.connection.timeout
