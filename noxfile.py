@@ -22,7 +22,7 @@ def tests(session: Session) -> None:
     session.run("pytest")
 
 
-@session(python=DEFAULT_PYTHON_VERSION, uv_groups=("lint", ))
+@session(python=DEFAULT_PYTHON_VERSION, uv_groups=("lint",))
 def lint(session: Session) -> None:
     """
     Run code verification tools ruff and pylint.

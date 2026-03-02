@@ -1,4 +1,3 @@
-
 import atexit
 
 import pytest
@@ -21,7 +20,8 @@ def test_parse_arguments_with_standard_args_passes(program):
 
 
 @pytest.mark.parametrize(
-    "help_argument", ["-h", "--help"],
+    "help_argument",
+    ["-h", "--help"],
 )
 def test_parse_arguments_with_help_raises_systemexit(program, help_argument):
     with pytest.raises(SystemExit):

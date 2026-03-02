@@ -1,11 +1,11 @@
 """Unit tests for the Stm32Loader class."""
 
-import pytest
-
 from unittest.mock import MagicMock
 
+import pytest
+
 from stm32loader import bootloader as Stm32
-from stm32loader.bootloader import Stm32Bootloader, PageIndexError
+from stm32loader.bootloader import PageIndexError, Stm32Bootloader
 
 # pylint: disable=missing-docstring, redefined-outer-name
 
@@ -52,13 +52,13 @@ def test_write_without_data_sends_no_bytes(bootloader, write):
 
 
 def test_write_with_bytes_sends_bytes_verbatim(bootloader, write):
-    bootloader.write(b'\x00\x11')
-    assert write.data_was_written(b'\x00\x11')
+    bootloader.write(b"\x00\x11")
+    assert write.data_was_written(b"\x00\x11")
 
 
 def test_write_with_integers_sends_integers_as_bytes(bootloader, write):
-    bootloader.write(0x03, 0x0a)
-    assert write.data_was_written(b'\x03\x0a')
+    bootloader.write(0x03, 0x0A)
+    assert write.data_was_written(b"\x03\x0a")
 
 
 def test_write_and_ack_with_nack_response_raises_commandexception(bootloader):
@@ -69,7 +69,9 @@ def test_write_and_ack_with_nack_response_raises_commandexception(bootloader):
 
 
 def test_write_memory_with_length_higher_than_256_raises_data_length_error(bootloader):
-    with pytest.raises(Stm32.DataLengthError, match=r"Can not write more than 256 bytes at once\."):
+    with pytest.raises(
+        Stm32.DataLengthError, match=r"Can not write more than 256 bytes at once\."
+    ):
         bootloader.write_memory(0, [1] * 257)
 
 
@@ -92,18 +94,20 @@ def test_write_memory_sends_correct_number_of_bytes(bootloader, write):
 
 
 def test_read_memory_with_length_higher_than_256_raises_data_length_error(bootloader):
-    with pytest.raises(Stm32.DataLengthError, match=r"Can not read more than 256 bytes at once\."):
+    with pytest.raises(
+        Stm32.DataLengthError, match=r"Can not read more than 256 bytes at once\."
+    ):
         bootloader.read_memory(0, length=257)
 
 
 def test_read_memory_sends_address_with_checksum(bootloader, write):
-    bootloader.read_memory(0x0f, 4)
-    assert write.data_was_written(b'\x00\x00\x00\x0f\x0f')
+    bootloader.read_memory(0x0F, 4)
+    assert write.data_was_written(b"\x00\x00\x00\x0f\x0f")
 
 
 def test_read_memory_sends_length_with_checksum(bootloader, write):
-    bootloader.read_memory(0, 0x0f + 1)
-    assert write.data_was_written(b'\x0f\xf0')
+    bootloader.read_memory(0, 0x0F + 1)
+    assert write.data_was_written(b"\x0f\xf0")
 
 
 def test_command_sends_command_and_control_bytes(bootloader, write):
@@ -125,25 +129,27 @@ def test_encode_address_returns_correct_bytes_with_checksum():
 
 def test_erase_memory_without_pages_sends_global_erase(bootloader, write):
     bootloader.erase_memory()
-    assert write.data_was_written(b'\xff\x00')
+    assert write.data_was_written(b"\xff\x00")
 
 
 def test_erase_memory_with_pages_sends_sector_count_and_eight_bit_page_indices(bootloader, write):
     bootloader.erase_memory([0x11, 0x12, 0x13, 0x14])
-    assert write.data_was_written(b'\x03')
-    assert write.data_was_written(b'\x11\x12\x13\x14')
+    assert write.data_was_written(b"\x03")
+    assert write.data_was_written(b"\x11\x12\x13\x14")
 
 
-def test_extended_erase_memory_with_pages_sends_sector_count_and_sixteen_bit_page_indices(bootloader, write):
+def test_extended_erase_memory_with_pages_sends_sector_count_and_sixteen_bit_page_indices(
+    bootloader, write
+):
     bootloader.extended_erase_memory([0x11, 0x12, 0x13, 0x14])
-    assert write.data_was_written(b'\x00\x03')
-    assert write.data_was_written(b'\x00\x11\x00\x12\x00\x13\x00\x14')
+    assert write.data_was_written(b"\x00\x03")
+    assert write.data_was_written(b"\x00\x11\x00\x12\x00\x13\x00\x14")
 
 
 def test_erase_memory_with_pages_sends_sector_addresses_with_checksum(bootloader, write):
     bootloader.erase_memory([0x01, 0x02, 0x04, 0x08])
     print(write.written_data)
-    assert write.data_was_written(b'\x01\x02\x04\x08\x0c')
+    assert write.data_was_written(b"\x01\x02\x04\x08\x0c")
 
 
 def test_erase_memory_with_page_count_higher_than_255_raises_page_index_error(bootloader):
@@ -161,52 +167,64 @@ def test_erase_memory_family_l0_without_pages_erases_individual_pages(connection
     # Page count - 1.
     assert write.written_data[0] == 127
     # Pages.
-    assert write.written_data[1:3] == b'\x00\x01'
+    assert write.written_data[1:3] == b"\x00\x01"
     # Length: command + byte count + page-addresses + CRC
     assert len(write.written_data) == 130
 
 
 def test_extended_erase_memory_without_pages_sends_global_mass_erase(bootloader, write):
     bootloader.extended_erase_memory()
-    assert write.data_was_written(b'\xff\xff\x00')
+    assert write.data_was_written(b"\xff\xff\x00")
 
 
-def test_extended_erase_memory_with_page_count_higher_than_65535_raises_page_index_error(bootloader):
-    with pytest.raises(Stm32.PageIndexError, match="Can not erase more than 65535 pages at once."):
+def test_extended_erase_memory_with_page_count_higher_than_65535_raises_page_index_error(
+    bootloader,
+):
+    with pytest.raises(
+        Stm32.PageIndexError, match="Can not erase more than 65535 pages at once."
+    ):
         bootloader.extended_erase_memory([1] * 65536)
 
 
 def test_extended_erase_memory_with_pages_sends_two_byte_sector_count(bootloader, write):
     bootloader.extended_erase_memory([0x11, 0x12, 0x13, 0x14])
-    assert write.data_was_written(b'\x00\x03')
+    assert write.data_was_written(b"\x00\x03")
 
 
-def test_extended_erase_memory_with_pages_sends_two_byte_sector_addresses_with_single_byte_checksum(bootloader, write):
-    bootloader.extended_erase_memory([0x01, 0x02, 0x04, 0x0ff0])
-    assert write.data_was_written(b'\x00\x01\x00\x02\x00\x04\x0f\xf0\xfb')
+def test_extended_erase_memory_with_pages_sends_two_byte_sector_addresses_with_single_byte_checksum(
+    bootloader, write
+):
+    bootloader.extended_erase_memory([0x01, 0x02, 0x04, 0x0FF0])
+    assert write.data_was_written(b"\x00\x01\x00\x02\x00\x04\x0f\xf0\xfb")
 
 
 def test_write_protect_sends_page_addresses_and_checksum(bootloader, write):
     bootloader.write_protect([0x01, 0x08])
-    assert write.data_was_written(b'\x01\x08\x08')
+    assert write.data_was_written(b"\x01\x08\x08")
 
 
 def test_verify_data_with_identical_data_passes():
-    Stm32Bootloader.verify_data(b'\x05', b'\x05')
+    Stm32Bootloader.verify_data(b"\x05", b"\x05")
 
 
 def test_verify_data_with_different_byte_count_raises_verify_error_complaining_about_length_difference():
-    with pytest.raises(Stm32.DataMismatchError, match=r"Data length does not match.*2.*vs.*1.*bytes"):
-        Stm32Bootloader.verify_data(b'\x05\x06', b'\x01')
+    with pytest.raises(
+        Stm32.DataMismatchError, match=r"Data length does not match.*2.*vs.*1.*bytes"
+    ):
+        Stm32Bootloader.verify_data(b"\x05\x06", b"\x01")
 
 
 def test_verify_data_with_non_identical_data_raises_verify_error_complaining_about_mismatched_byte():
-    with pytest.raises(Stm32.DataMismatchError, match=r"Verification data does not match read data.*mismatch.*0x1.*0x6.*0x7"):
-        Stm32Bootloader.verify_data(b'\x05\x06', b'\x05\x07')
+    with pytest.raises(
+        Stm32.DataMismatchError,
+        match=r"Verification data does not match read data.*mismatch.*0x1.*0x6.*0x7",
+    ):
+        Stm32Bootloader.verify_data(b"\x05\x06", b"\x05\x07")
 
 
 @pytest.mark.parametrize(
-    "family", ["F1", "F3", "F7"],
+    "family",
+    ["F1", "F3", "F7"],
 )
 def test_get_uid_for_known_family_reads_at_correct_address(connection, family):
     bootloader = Stm32Bootloader(connection, device_family=family)
@@ -227,7 +245,8 @@ def test_get_uid_for_unknown_family_returns_uid_address_unknown(connection):
 
 
 @pytest.mark.parametrize(
-    "family", ["F4", "L0"],
+    "family",
+    ["F4", "L0"],
 )
 def test_get_flash_size_and_uid_for_exception_families_returns_size_and_uid(connection, family):
     bootloader = Stm32Bootloader(connection, device_family=family)
@@ -238,15 +257,17 @@ def test_get_flash_size_and_uid_for_exception_families_returns_size_and_uid(conn
     # Set up the 'UID' value (12 bytes)
     # and flash_size value (2 bytes).
     uid_address = bootloader.UID_ADDRESS[family] & 0xFF
-    memory_block[uid_address: uid_address + 12] = b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c'
+    memory_block[uid_address : uid_address + 12] = (
+        b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c"
+    )
     flash_size_address = bootloader.FLASH_SIZE_ADDRESS[family] & 0xFF
-    memory_block[flash_size_address: flash_size_address + 2] = b'\x01\x02'
+    memory_block[flash_size_address : flash_size_address + 2] = b"\x01\x02"
     bootloader.read_memory.return_value = memory_block
 
     flash_size, uid = bootloader.get_flash_size_and_uid()
 
     assert flash_size == 0x0201
-    assert uid == b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c'
+    assert uid == b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c"
 
 
 @pytest.mark.parametrize(
@@ -254,7 +275,10 @@ def test_get_flash_size_and_uid_for_exception_families_returns_size_and_uid(conn
     [
         (0, "UID not supported in this part"),
         (-1, "UID address unknown"),
-        (bytearray(b"\x12\x34\x56\x78\x9a\xbc\xde\x01\x12\x34\x56\x78"), "3412-7856-01DEBC9A-78563412"),
+        (
+            bytearray(b"\x12\x34\x56\x78\x9a\xbc\xde\x01\x12\x34\x56\x78"),
+            "3412-7856-01DEBC9A-78563412",
+        ),
     ],
 )
 def test_format_uid_returns_correct_string(bootloader, uid_string):
@@ -264,7 +288,9 @@ def test_format_uid_returns_correct_string(bootloader, uid_string):
 
 
 def test_get_pages_from_range_with_invalid_start_address_raises_page_index_error(bootloader):
-    with pytest.raises(PageIndexError, match=".*start address should be at a flash page boundary.*"):
+    with pytest.raises(
+        PageIndexError, match=".*start address should be at a flash page boundary.*"
+    ):
         bootloader.pages_from_range(10, 1024)
 
 
@@ -274,5 +300,5 @@ def test_get_pages_from_range_with_start_address_zero_returns_single_page(bootlo
 
 
 def test_get_pages_from_large_range_returns_multiple_pages(bootloader):
-    pages = bootloader.pages_from_range(5*1024, 20*1024)
+    pages = bootloader.pages_from_range(5 * 1024, 20 * 1024)
     assert pages == list(range(5, 20))
