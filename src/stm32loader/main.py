@@ -24,12 +24,15 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import serial
+
 try:
     from progress.bar import ChargingBar as progress_bar
 except ImportError:
     progress_bar = None
 
 from stm32loader import args, bootloader, hexfile
+from stm32loader.device_family import DEVICE_FAMILIES, DeviceFamily, DeviceFlag
 from stm32loader.uart import SerialConnection
 
 
@@ -37,7 +40,7 @@ class Stm32Loader:
     """Main application: parse arguments and handle commands."""
 
     # serial link bit parity, compatible to pyserial serial.PARTIY_EVEN
-    PARITY = {"even": "E", "none": "N"}
+    PARITY = {"even": serial.PARITY_EVEN, "none": serial.PARITY_NONE}
 
     def __init__(self):
         """Construct Stm32Loader object with default settings."""
@@ -47,7 +50,7 @@ class Stm32Loader:
     def debug(self, level, message):
         """Log a message to stderror if its level is low enough."""
         if self.configuration.verbosity >= level:
-            print(message, file=sys.stderr)
+            print(message)
 
     def parse_arguments(self, arguments):
         """Parse the list of command-line arguments."""
@@ -55,6 +58,12 @@ class Stm32Loader:
 
         # parse successful, process options further
         self.configuration.parity = Stm32Loader.PARITY[self.configuration.parity.lower()]
+
+        if self.configuration.family:
+            family = DeviceFamily[self.configuration.family]
+            family_flags = DEVICE_FAMILIES[family].family_default_flags
+            if family_flags & DeviceFlag.FORCE_PARITY_NONE:
+                self.configuration.parity = serial.PARITY_NONE
 
     def connect(self):
         """Connect to the bootloader UART over an RS-232 serial port."""
@@ -136,12 +145,18 @@ class Stm32Loader:
             try:
                 if self.configuration.length is None:
                     # Erase full device.
+                    self.debug(0, "Performing full erase...")
                     self.stm32.erase_memory(pages=None)
                 else:
                     # Erase from address to address + length.
                     start_address = self.configuration.address
                     end_address = self.configuration.address + self.configuration.length
                     pages = self.stm32.pages_from_range(start_address, end_address)
+                    self.debug(
+                        0,
+                        f"Performing partial erase (0x{start_address:X} - 0x{end_address:X},"
+                        f" {len(pages)} pages)... ",
+                    )
                     self.stm32.erase_memory(pages)
 
             except bootloader.CommandError:
@@ -159,7 +174,7 @@ class Stm32Loader:
             read_data = self.stm32.read_memory_data(self.configuration.address, len(binary_data))
             try:
                 bootloader.Stm32Bootloader.verify_data(read_data, binary_data)
-                print("Verification OK", file=sys.stderr)
+                print("Verification OK")
             except bootloader.DataMismatchError as e:
                 print("Verification FAILED: %s" % e, file=sys.stderr)
                 sys.exit(1)
@@ -176,46 +191,45 @@ class Stm32Loader:
         """Reset the microcontroller."""
         self.stm32.reset_from_flash()
 
-    def read_device_id(self):
-        """Show chip ID and bootloader version."""
+    def detect_device(self) -> None:
+        """Detect the STM32 device type by querying bootloader and regs."""
         boot_version = self.stm32.get()
         self.debug(0, "Bootloader version: 0x%X" % boot_version)
-        device_id = self.stm32.get_id()
-        family = self.configuration.family
-        if family == "NRG":
-            # ST AN4872.
-            # Three bytes encode metal fix, mask set,
-            # BlueNRG-series + flash size.
-            metal_fix = (device_id & 0xFF0000) >> 16
-            mask_set = (device_id & 0x00FF00) >> 8
-            device_id = device_id & 0x0000FF
-            self.debug(0, "Metal fix: 0x%X" % metal_fix)
-            self.debug(0, "Mask set: 0x%X" % mask_set)
-
-        self.debug(
-            0, "Chip id: 0x%X (%s)" % (device_id, bootloader.CHIP_IDS.get(device_id, "Unknown"))
-        )
+        self.stm32.detect_device()
+        if self.stm32.device.bootloader_id is not None:
+            self.debug(5, f"Bootloader ID: 0x{self.stm32.device.bootloader_id:02X}")
+        self.debug(0, f"Chip ID: 0x{self.stm32.device.product_id:03X}")
+        self.debug(0, f"Chip model: {self.stm32.device.device_name}")
 
     def read_device_uid(self):
-        """Show chip UID and flash size."""
-        family = self.configuration.family
-        if not family:
-            self.debug(0, "Supply --family to see flash size and device UID, e.g: -f F1")
-            return
-
+        """Show chip UID."""
         try:
             flash_size = self.stm32.get_flash_size()
             device_uid = self.stm32.get_uid()
         except bootloader.CommandError as e:
             self.debug(
                 0,
-                "Something was wrong with reading chip family data: " + str(e),
+                "Something was wrong with reading chip UID: " + str(e),
             )
             return
 
-        device_uid_string = self.stm32.format_uid(device_uid)
-        self.debug(0, "Device UID: %s" % device_uid_string)
-        self.debug(0, "Flash size: %d KiB" % flash_size)
+        if device_uid != bootloader.Stm32Bootloader.UID_NOT_SUPPORTED:
+            device_uid_string = self.stm32.format_uid(device_uid)
+            self.debug(0, "Device UID: %s" % device_uid_string)
+
+    def read_flash_size(self):
+        """Show chip flash size."""
+        try:
+            flash_size = self.stm32.get_flash_size()
+        except bootloader.CommandError as e:
+            self.debug(
+                0,
+                "Something was wrong with reading chip flash size: " + str(e),
+            )
+            return
+
+        if flash_size != bootloader.Stm32Bootloader.FLASH_SIZE_UNKNOWN:
+            self.debug(0, f"Flash size: {flash_size} kiB")
 
     @staticmethod
     def _get_progress_bar(no_progress=False):
@@ -236,8 +250,9 @@ def main(*arguments, **kwargs):
         loader.parse_arguments(arguments)
         loader.connect()
         try:
-            loader.read_device_id()
+            loader.detect_device()
             loader.read_device_uid()
+            loader.read_flash_size()
             loader.perform_commands()
         finally:
             loader.reset()

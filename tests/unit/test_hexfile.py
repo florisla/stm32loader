@@ -1,10 +1,9 @@
 from pathlib import Path
 
+from stm32loader.hexfile import load_hex
+
 HERE = Path(__file__).parent
 DATA = HERE / "../data"
-
-
-from stm32loader.hexfile import load_hex
 
 
 def test_load_hex_delivers_bytes():

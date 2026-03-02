@@ -23,9 +23,11 @@ import enum
 import math
 import operator
 import struct
-import sys
 import time
 from functools import lru_cache, reduce
+
+from stm32loader.device_family import DeviceFamily, DeviceFlag
+from stm32loader.devices import DEVICES
 
 CHIP_IDS = {
     # see ST AN2606 Table 136 Bootloader device-dependent parameters
@@ -72,8 +74,6 @@ CHIP_IDS = {
     # and byte 2 (mask set).
     # Requires parity None.
     0x000003: "BlueNRG-1 160kB",
-    0x00000F: "BlueNRG-1 256kB",
-    0x000023: "BlueNRG-2 160kB",
     0x00002F: "BlueNRG-2 256kB",
     # STM32F0 RM0091 Table 136. DEV_ID and REV_ID field values
     0x440: "STM32F030x8",
@@ -110,6 +110,10 @@ class DataMismatchError(Stm32LoaderError):
 
 class MissingDependencyError(Stm32LoaderError):
     """Exception: required dependency is missing."""
+
+
+class DeviceDetectionError(Stm32LoaderError):
+    """Exception: could not detect device type."""
 
 
 class ShowProgress:
@@ -174,20 +178,26 @@ class ShowProgress:
         self.progress_bar.finish()
 
 
-class Stm32Bootloader:
+class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
     """Talk to the STM32 native bootloader."""
 
     # pylint: disable=too-many-public-methods
 
     @enum.unique
     class Command(enum.IntEnum):
-        """STM32 native bootloader command values."""
+        """
+        STM32 native bootloader command values.
+
+        Refer to ST AN3155, AN4872, AN2606.
+        """
 
         # pylint: disable=too-few-public-methods
 
-        # See ST AN3155, AN4872
+        # Get bootloader protocol version and supported commands.
         GET = 0x00
+        # Get bootloader protocol version.
         GET_VERSION = 0x01
+        # Get chip/product/device ID. ot available on STM32F103.
         GET_ID = 0x02
         READ_MEMORY = 0x11
         GO = 0x21
@@ -249,10 +259,14 @@ class Stm32Bootloader:
 
     UID_SWAP = [[1, 0], [3, 2], [7, 6, 5, 4], [11, 10, 9, 8]]
 
-    # Part does not support unique ID feature
-    UID_NOT_SUPPORTED = 0
     # stm32loader does not know the address for the unique ID
     UID_ADDRESS_UNKNOWN = -1
+
+    # Flash size can not be read.
+    FLASH_SIZE_UNKNOWN = -2
+
+    # Part does not support unique ID feature
+    UID_NOT_SUPPORTED = 3
 
     FLASH_SIZE_ADDRESS = {
         # ST RM0360 section 27.1 Memory size data register
@@ -343,7 +357,9 @@ class Stm32Bootloader:
 
     SYNCHRONIZE_ATTEMPTS = 2
 
-    def __init__(self, connection, device_family=None, verbosity=5, show_progress=None):
+    def __init__(  # pylint: disable=too-many-positional-arguments,too-many-arguments
+        self, connection, device=None, device_family=None, verbosity=5, show_progress=None
+    ):
         """
         Construct the Stm32Bootloader object.
 
@@ -368,6 +384,7 @@ class Stm32Bootloader:
         self.data_transfer_size = self.DATA_TRANSFER_SIZE.get(device_family or "default")
         self.flash_page_size = self.FLASH_PAGE_SIZE.get(device_family or "default")
         self.device_family = device_family or "F1"
+        self.device = device
 
     def write(self, *data):
         """Write the given data to the MCU."""
@@ -386,7 +403,7 @@ class Stm32Bootloader:
     def debug(self, level, message):
         """Print the given message if its level is low enough."""
         if self.verbosity >= level:
-            print(message, file=sys.stderr)
+            print(message)
 
     def reset_from_system_memory(self):
         """Reset the MCU with boot0 enabled to enter the bootloader."""
@@ -410,7 +427,7 @@ class Stm32Bootloader:
 
         for attempt in range(self.SYNCHRONIZE_ATTEMPTS):
             if attempt:
-                print("Bootloader activation timeout -- retrying", file=sys.stderr)
+                print("Bootloader activation timeout -- retrying")
             self.write(self.Command.SYNCHRONIZE)
             read_data = bytearray(self.connection.read())
 
@@ -443,16 +460,18 @@ class Stm32Bootloader:
         length = bytearray(self.connection.read())[0]
         version = bytearray(self.connection.read())[0]
         self.debug(10, "    Bootloader version: " + hex(version))
-        data = bytearray(self.connection.read(length))
-        if self.Command.EXTENDED_ERASE in data:
-            self.extended_erase = True
-        self.debug(10, "    Available commands: " + ", ".join(hex(b) for b in data))
+        supported_commands = bytearray(self.connection.read(length))
+        self.supported_commands = {command: True for command in supported_commands}
+        self.extended_erase = self.Command.EXTENDED_ERASE in self.supported_commands
+        self.debug(
+            10, "    Available commands: " + ", ".join(hex(b) for b in self.supported_commands)
+        )
         self._wait_for_ack("0x00 end")
         return version
 
     def get_version(self):
         """
-        Return the bootloader version.
+        Return the bootloader protocol version.
 
         Read protection status readout is not yet implemented.
         """
@@ -468,7 +487,7 @@ class Stm32Bootloader:
         return version
 
     def get_id(self):
-        """Send the 'Get ID' command and return the device (model) ID."""
+        """Send the 'Get ID' command and return the chip/product/device ID."""
         self.command(self.Command.GET_ID, "Get ID")
         length = bytearray(self.connection.read())[0]
         id_data = bytearray(self.connection.read(length + 1))
@@ -547,6 +566,59 @@ class Stm32Bootloader:
         flash_size = data[flash_size_lsb_address] + (data[flash_size_lsb_address + 1] << 8)
 
         return flash_size, device_uid
+
+    def get_uid(self):
+        """
+        Send the 'Get UID' command and return the device UID.
+
+        Return UID_NOT_SUPPORTED if the device does not have
+        a UID.
+
+        :return byterary: UID bytes of the device, or 0 or -1 when
+          not available.
+        """
+        if self.device.flags & DeviceFlag.LONG_UID_ACCESS:
+            _flash_size, uid = self.get_flash_size_and_uid()
+        else:
+            if not self.device.family.uid_address:
+                return self.UID_NOT_SUPPORTED
+            uid = self.read_memory(self.device.family.uid_address, 12)
+
+        return uid
+
+    def detect_device(self) -> None:
+        """Detect the device type and store in `device`."""
+        product_id = self.get_id()
+
+        # BlueNRG devices have the silicon cut version in the
+        # upper bytes of the PID.
+        if self.device_family == DeviceFamily.NRG.value:
+            product_id &= 0xFF
+
+        # Look up device details based on ID *without* bootloader ID.
+        self.device = DEVICES.get((product_id, None))
+
+        if not self.device:
+            raise DeviceDetectionError(
+                f"Unknown device type: no type known for product id: 0x{product_id:03X}"
+            )
+
+        # Look up the product's bootloader ID.
+        bootloader_id = self.get_bootloader_id()
+
+        # Now we can possibly *refine* the product: look up
+        # with product ID *and* bootloader ID.
+        self.device = DEVICES.get((product_id, bootloader_id), self.device)
+
+    def get_bootloader_id(self):
+        """Get the bootloader ID by reading the 'bootloader ID' register."""
+        if not self.device.bootloader_id_address:
+            return None
+
+        bootloader_id_byte = self.read_memory_data(self.device.bootloader_id_address, 1)
+        bootloader_id = struct.unpack("B", bootloader_id_byte)[0]
+
+        return bootloader_id
 
     @classmethod
     def format_uid(cls, uid):
@@ -695,7 +767,7 @@ class Stm32Bootloader:
 
         previous_timeout_value = self.connection.timeout
         self.connection.timeout = 30
-        print("Extended erase (0x44), this can take ten seconds or more", file=sys.stderr)
+        print("Extended erase (0x44), this can take ten seconds or more")
         try:
             self._wait_for_ack("0x44 erasing failed")
         finally:
@@ -745,7 +817,9 @@ class Stm32Bootloader:
         """
         data = bytearray()
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
-        self.debug(5, "Read %d chunks at address 0x%X..." % (chunk_count, address))
+        self.debug(
+            10, "Read %7d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address)
+        )
         with self.show_progress("Reading", maximum=chunk_count) as progress_bar:
             while length:
                 read_length = min(length, self.data_transfer_size)
@@ -769,7 +843,9 @@ class Stm32Bootloader:
         length = len(data)
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
         offset = 0
-        self.debug(5, "Write %d chunks at address 0x%X..." % (chunk_count, address))
+        self.debug(
+            5, "Write %6d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address)
+        )
 
         with self.show_progress("Writing", maximum=chunk_count) as progress_bar:
             while length:
