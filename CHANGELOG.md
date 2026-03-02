@@ -3,17 +3,28 @@
 What changed in which version.
 
 
-## vnext
+## [0.8.0] - TBD
 
-uv, nox, bump-my-version, STM32G4, Python 3.12/3.13/3.14
+### Added
+* `#81` Support STM32G4 family.
+* `#87` Officially support Python 3.12/3.13/3.14, PyPy 3.10/3.11.
+* `#69` Print details about erased pages.
+
+## Changed
+* `#88` Use uv as build backend.
+* `#88` Use uv in usage examples.
+* `#71` Use `ruff` as formatter.
 
 
 ## [0.7.1] - 2023-10-18
 
+
+### Added
+* `#67` Support STM32H750.
+
 ### Fixed
 * Integer division error when erasing specific region of flash.
 * Print erase/write/verify in correct order.
-
 
 ### Cleaned
 * Extract method for range-to-pages calculation.
