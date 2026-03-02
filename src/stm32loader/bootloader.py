@@ -497,7 +497,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
 
     def get_flash_size(self):
         """Return the MCU's flash size in kilobytes."""
-        if self.device_family in ["F4", "L0"]:
+        if self.device.flags & DeviceFlag.LONG_UID_ACCESS:
+            # F4, L0 families.
             flash_size, _uid = self._get_flash_size_and_uid_bulk()
             return flash_size
         return self._get_flash_size_raw()
@@ -522,7 +523,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
     @lru_cache(maxsize=2)
     def _get_flash_size_raw(self):
         """Perform a direct 2-byte read of the flash size."""
-        flash_size_address = self.FLASH_SIZE_ADDRESS[self.device_family]
+        flash_size_address = self.device.family.flash_size_address
         flash_size_bytes = self.read_memory(flash_size_address, 2)
         flash_size = flash_size_bytes[0] + (flash_size_bytes[1] << 8)
         return flash_size
