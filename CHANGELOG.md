@@ -3,6 +3,12 @@
 What changed in which version.
 
 
+## vnext
+
+### Changed
+* `#91` Drop the `--family` argument; do auto-detect instead.
+* `#90` Move docs to `docs` folder.
+
 ## [0.8.0] - TBD
 
 ### Added
