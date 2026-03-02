@@ -29,7 +29,7 @@ STM32_CHIP_TYPE = "STM32F10x Medium-density"
 SERIAL_PORT = "COM7"
 # Flaky cable setup, cheap serial adapter...
 BAUD_RATE = 9600
-KBYTE = 2 ** 10
+KBYTE = 2**10
 SIZE = 32 * KBYTE
 DUMP_FILE = "dump.bin"
 FIRMWARE_FILE = os.path.join(HERE, "../../firmware/generic_boot20_pc13.binary.bin")
@@ -40,7 +40,16 @@ FIRMWARE_FILE = os.path.join(HERE, "../../firmware/generic_boot20_pc13.binary.bi
 @pytest.fixture(scope="module")
 def stm32loader():
     def main_with_default_arguments(*args):
-        main("--port", SERIAL_PORT, "--baud", str(BAUD_RATE), "--quiet", *args, avoid_system_exit=True)
+        main(
+            "--port",
+            SERIAL_PORT,
+            "--baud",
+            str(BAUD_RATE),
+            "--quiet",
+            *args,
+            avoid_system_exit=True,
+        )
+
     return main_with_default_arguments
 
 
@@ -57,22 +66,22 @@ def test_unexisting_serial_port_prints_readable_error(capsys):
     main("-p", "COM108", avoid_system_exit=True)
     captured = capsys.readouterr()
     assert "could not open port " in captured.err
-    assert ("port 'COM108'" in captured.err or "port COM108" in captured.err)
+    assert "port 'COM108'" in captured.err or "port COM108" in captured.err
     assert "Is the device connected and powered correctly?" in captured.err
 
 
 def test_env_var_stm32loader_serial_port_defines_port(capsys):
-    os.environ['STM32LOADER_SERIAL_PORT'] = "COM109"
+    os.environ["STM32LOADER_SERIAL_PORT"] = "COM109"
     main(avoid_system_exit=True)
     captured = capsys.readouterr()
-    assert ("port 'COM109'" in captured.err or "port COM109" in captured.err)
+    assert "port 'COM109'" in captured.err or "port COM109" in captured.err
 
 
 def test_argument_port_overrules_env_var_for_serial_port(capsys):
-    os.environ['STM32LOADER_SERIAL_PORT'] = "COM120"
+    os.environ["STM32LOADER_SERIAL_PORT"] = "COM120"
     main("--port", "COM121", avoid_system_exit=True)
     captured = capsys.readouterr()
-    assert ("port 'COM121'" in captured.err or "port COM121" in captured.err)
+    assert "port 'COM121'" in captured.err or "port COM121" in captured.err
 
 
 @pytest.mark.hardware
@@ -130,5 +139,3 @@ def test_write_saves_correct_data(stm32loader, dump_file):
 @pytest.mark.hardware
 def test_erase_write_verify_passes(stm32loader):
     stm32loader("--erase", "--write", "--verify", FIRMWARE_FILE)
-
-

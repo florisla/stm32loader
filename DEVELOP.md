@@ -32,9 +32,9 @@ Run pytest.
 
 Run ruff and pylint.
 
-    uv run ruff check stm32loader
-    uv run ruff format --check stm32loader
-    uv run pylint stm32loader
+    uv run ruff check .
+    uv run ruff format --check .
+    uv run pylint .
 
 
 ## Updating --help info in the README

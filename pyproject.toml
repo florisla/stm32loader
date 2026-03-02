@@ -43,11 +43,12 @@ lint = [
 ]
 test = [
     "pytest",
+    "intelhex",
 ]
 dev = [
-    "pytest",
-    "ruff",
-    "pylint",
+    { include-group = "test" },
+    { include-group = "hex" },
+    { include-group = "lint" },
     "bump-my-version",
     "cogapp",
     "nox>=2026.2.9",
