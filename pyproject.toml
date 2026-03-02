@@ -44,15 +44,19 @@ lint = [
 test = [
     "pytest",
     "intelhex",
+    "nox>=2026.2.9",
+    "nox-uv>=0.7.1",
+    "tox>=4.30.3",
+]
+release = [
+    "bump-my-version",
+    "cogapp",
 ]
 dev = [
     { include-group = "test" },
     { include-group = "hex" },
     { include-group = "lint" },
-    "bump-my-version",
-    "cogapp",
-    "nox>=2026.2.9",
-    "nox-uv>=0.7.1",
+    { include-group = "release" },
 ]
 
 [project.scripts]
