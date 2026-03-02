@@ -819,11 +819,13 @@ class Stm32Bootloader:
         """Return page indices for the given memory range."""
         if start % self.flash_page_size != 0:
             raise PageIndexError(
-                f"Erase start address should be at a flash page boundary: 0x{start:08X}."
+                f"Erase start address should be at a flash page boundary: 0x{start:08X}"
+                f" (page size 0x{self.flash_page_size:04X}).",
             )
         if end % self.flash_page_size != 0:
             raise PageIndexError(
-                f"Erase end address should be at a flash page boundary: 0x{end:08X}."
+                f"Erase end address should be at a flash page boundary: 0x{end:08X}"
+                f" (page size 0x{self.flash_page_size:04X}).",
             )
 
         # Assemble the list of pages to erase.
