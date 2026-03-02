@@ -25,7 +25,7 @@ import operator
 import struct
 import sys
 import time
-from functools import reduce
+from functools import lru_cache, reduce
 
 CHIP_IDS = {
     # see ST AN2606 Table 136 Bootloader device-dependent parameters
@@ -479,20 +479,55 @@ class Stm32Bootloader:
         return _device_id
 
     def get_flash_size(self):
-        """Return the MCU's flash size in bytes."""
+        """Return the MCU's flash size in kilobytes."""
+        if self.device_family in ["F4", "L0"]:
+            flash_size, _uid = self._get_flash_size_and_uid_bulk()
+            return flash_size
+        return self._get_flash_size_raw()
+
+    def get_uid(self):
+        """
+        Send the 'Get UID' command and return the device UID.
+
+        Return UID_NOT_SUPPORTED if the device does not have
+        a UID.
+        Return UIT_ADDRESS_UNKNOWN if the address of the device's
+        UID is not known.
+
+        :return bytearray: UID bytes of the device, or 0 or -1 when
+          not available.
+        """
+        if self.device_family in ["F4", "L0"]:
+            _flash_size, uid = self._get_flash_size_and_uid_bulk()
+            return uid
+        return self._get_uid_raw()
+
+    @lru_cache(maxsize=2)
+    def _get_flash_size_raw(self):
+        """Perform a direct 2-byte read of the flash size."""
         flash_size_address = self.FLASH_SIZE_ADDRESS[self.device_family]
         flash_size_bytes = self.read_memory(flash_size_address, 2)
         flash_size = flash_size_bytes[0] + (flash_size_bytes[1] << 8)
         return flash_size
 
-    def get_flash_size_and_uid(self):
-        """
-        Return device_uid and flash_size for L0 and F4 family devices.
+    @lru_cache(maxsize=2)
+    def _get_uid_raw(self):
+        """Perform a direct 12-byte read of the device UID."""
+        uid_address = self.UID_ADDRESS.get(self.device_family, self.UID_ADDRESS_UNKNOWN)
+        if uid_address is None:
+            return self.UID_NOT_SUPPORTED
+        if uid_address == self.UID_ADDRESS_UNKNOWN:
+            return self.UID_ADDRESS_UNKNOWN
 
-        For some reason, F4 (at least, NUCLEO F401RE) can't read the 12 or 2
-        bytes for UID and flash size directly.
-        Reading a whole chunk of 256 bytes at 0x1FFFA700 does work and
-        requires some data extraction.
+        uid = self.read_memory(uid_address, 12)
+        return uid
+
+    @lru_cache(maxsize=2)
+    def _get_flash_size_and_uid_bulk(self):
+        """
+        Return device_uid and flash_size using a 256-byte bulk read.
+
+        This workaround is used for F4 and L0 families.
         """
         flash_size_address = self.FLASH_SIZE_ADDRESS[self.device_family]
         uid_address = self.UID_ADDRESS.get(self.device_family)
@@ -508,36 +543,12 @@ class Stm32Bootloader:
 
         self.debug(10, "flash_size_address = 0x%X" % flash_size_address)
         self.debug(10, "uid_address = 0x%X" % uid_address)
-        # self.debug(10, 'data_start_address =0x%X' % data_start_address)
-        # self.debug(10, 'flashsizelsbaddress =0x%X' % flash_size_lsb_address)
-        # self.debug(10, 'uid_lsb_address = 0x%X' % uid_lsb_address)
 
         data = self.read_memory(data_start_address, self.data_transfer_size)
         device_uid = data[uid_lsb_address : uid_lsb_address + 12]
         flash_size = data[flash_size_lsb_address] + (data[flash_size_lsb_address + 1] << 8)
 
         return flash_size, device_uid
-
-    def get_uid(self):
-        """
-        Send the 'Get UID' command and return the device UID.
-
-        Return UID_NOT_SUPPORTED if the device does not have
-        a UID.
-        Return UIT_ADDRESS_UNKNOWN if the address of the device's
-        UID is not known.
-
-        :return byterary: UID bytes of the device, or 0 or -1 when
-          not available.
-        """
-        uid_address = self.UID_ADDRESS.get(self.device_family, self.UID_ADDRESS_UNKNOWN)
-        if uid_address is None:
-            return self.UID_NOT_SUPPORTED
-        if uid_address == self.UID_ADDRESS_UNKNOWN:
-            return self.UID_ADDRESS_UNKNOWN
-
-        uid = self.read_memory(uid_address, 12)
-        return uid
 
     @classmethod
     def format_uid(cls, uid):
@@ -617,7 +628,7 @@ class Stm32Bootloader:
 
         if not pages and self.device_family == "L0":
             # Special case: L0 erase should do each page separately.
-            flash_size, _uid = self.get_flash_size_and_uid()
+            flash_size = self.get_flash_size()
             page_count = (flash_size * 1024) // self.flash_page_size
             if page_count > 255:
                 raise PageIndexError("Can not erase more than 255 pages for L0 family.")
@@ -654,7 +665,7 @@ class Stm32Bootloader:
         if not pages and self.device_family in ("L0",):
             # L0 devices do not support mass erase.
             # Instead, erase all pages individually.
-            flash_size, _uid = self.get_flash_size_and_uid()
+            flash_size = self.get_flash_size()
             pages = list(range(0, (flash_size * 1024) // self.flash_page_size))
 
         self.command(self.Command.EXTENDED_ERASE, "Extended erase memory")
