@@ -47,3 +47,7 @@ def test_parse_arguments_erase_without_port_complains_about_missing_argument(pro
 
 def test_parse_arguments_write_unprotect(program):
     program.parse_arguments(["--write-unprotect"])
+
+
+def test_parse_arguments_write_protect(program):
+    program.parse_arguments(["--write-protect"])

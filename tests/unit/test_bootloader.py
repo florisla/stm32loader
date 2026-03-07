@@ -6,6 +6,7 @@ import pytest
 
 from stm32loader import bootloader as Stm32
 from stm32loader.bootloader import PageIndexError, Stm32Bootloader
+from stm32loader.device_info import DeviceInfo
 from stm32loader.devices import DEVICES
 
 # pylint: disable=missing-docstring, redefined-outer-name
@@ -35,7 +36,9 @@ def write(connection):
 
 @pytest.fixture
 def bootloader(connection):
-    return Stm32Bootloader(connection)
+    device = DEVICES.get((0x422, 0x50))
+    assert device is not None, "Device not found in DEVICES mapping"
+    return Stm32Bootloader(connection, device=device)
 
 
 def test_constructor_with_connection_none_passes():
@@ -200,9 +203,96 @@ def test_extended_erase_with_pages_sends_two_byte_sector_addresses_with_single_b
     assert write.data_was_written(b"\x00\x01\x00\x02\x00\x04\x0f\xf0\xfb")
 
 
-def test_write_protect_sends_page_addresses_and_checksum(bootloader, write):
+def test_write_protect_sends_command_page_addresses_and_checksum(bootloader, write):
+    bootloader.get_flash_size = MagicMock()
+    bootloader.get_flash_size.return_value = 16
     bootloader.write_protect([0x01, 0x08])
-    assert write.data_was_written(b"\x01\x08\x08")
+    assert write.data_was_written(b"\x63\x9c\x01\x01\x08\x08\x7f"), write.written_data
+
+
+def test_write_protect_fails_when_no_device(bootloader):
+    bootloader = Stm32Bootloader(connection, device_family="F0", device=None)
+    with pytest.raises(
+        Stm32.Stm32LoaderError,
+        match="Device type must be detected before write protection can be enabled.",
+    ):
+        bootloader.write_protect([0x01, 0x08])
+
+
+def test_write_protect_fails_when_not_supported(bootloader):
+    device = DeviceInfo(
+        device_family="F0", device_name="STM32F012", pid=0, bid=0, write_protect_supported=False
+    )
+    bootloader = Stm32Bootloader(connection, device_family="F0", device=device)
+    bootloader.get_flash_size = MagicMock()
+    bootloader.get_flash_size.return_value = 16
+    with pytest.raises(
+        Stm32.Stm32LoaderError,
+        match="Write protection support for 'STM32F012' not currently implemented.",
+    ):
+        bootloader.write_protect([0x01, 0x08])
+
+
+def test_write_protect_fails_on_invalid_sector_index(bootloader):
+    bootloader.get_flash_size = MagicMock()
+    bootloader.get_flash_size.return_value = 16
+    with pytest.raises(Stm32.PageIndexError):
+        bootloader.write_protect([0x01, 0x08, 0x100])
+
+
+def test_write_protect_fails_on_too_many_sectors(bootloader):
+    bootloader.get_flash_size = MagicMock()
+    bootloader.get_flash_size.return_value = 16
+    with pytest.raises(Stm32.DataLengthError):
+        bootloader.write_protect(list(range(256)) + [0, 1])
+
+
+def test_write_protect_fails_on_no_flash_info(connection, bootloader):
+    device = DeviceInfo(
+        device_family="F0", device_name="STM32F012", pid=0, bid=0, write_protect_supported=True
+    )
+    device.flash = None
+    bootloader = Stm32Bootloader(connection, device_family="F0", device=device)
+
+    bootloader.get_flash_size = MagicMock()
+    bootloader.get_flash_size.return_value = 16
+    with pytest.raises(
+        Stm32.Stm32LoaderError, match="Device flash info is missing for family 'F0'"
+    ):
+        bootloader.write_protect()
+
+
+def test_write_protect_fails_on_no_flash_sector_info(connection, bootloader):
+    device = DeviceInfo(
+        device_family="F0", device_name="STM32F012", pid=0, bid=0, write_protect_supported=True
+    )
+    device.flash = MagicMock()
+    device.flash.num_sectors = MagicMock(return_value=None)
+    bootloader = Stm32Bootloader(connection, device_family="F0", device=device)
+
+    bootloader.get_flash_size = MagicMock()
+    bootloader.get_flash_size.return_value = 16
+    with pytest.raises(
+        Stm32.Stm32LoaderError, match="Device flash sector info is missing for device 'STM32F012'"
+    ):
+        bootloader.write_protect()
+
+
+def test_write_protect_no_pages_specified(connection, write):
+    device = DEVICES.get((0x417, 0xC0))
+    assert device is not None, "Device not found in DEVICES mapping"
+
+    bootloader = Stm32Bootloader(connection, device_family="L0", device=device)
+    bootloader.get_flash_size = MagicMock()
+    bootloader.get_flash_size.return_value = 8
+    # bootloader.write = write
+    bootloader.write_protect()
+    assert write.data_was_written(b"\x63"), write.written_data
+    # Write protect sector size is 4KB, flash size is 64KB
+    # 64KB / 4KB = 16 sectors (index 1)
+    # Checksum is 0x0f
+    sectors = bytes(range(0, 16))
+    assert write.data_was_written(b"\x63\x9c\x0f" + sectors + b"\x0f\x7f"), write.written_data
 
 
 def test_write_unprotect_sends_command(bootloader, write):

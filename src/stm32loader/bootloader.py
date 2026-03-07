@@ -26,7 +26,11 @@ import struct
 import time
 from functools import lru_cache, reduce
 
+# FIXME: remove and switch to '|' syntax when Python 3.10+ is required.
+from typing import Optional
+
 from stm32loader.device_family import DeviceFamily, DeviceFlag
+from stm32loader.device_info import DeviceInfo
 from stm32loader.devices import DEVICES
 
 CHIP_IDS = {
@@ -355,6 +359,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         "H7": 128 * 1024,
     }
 
+    device: Optional[DeviceInfo]
+
     SYNCHRONIZE_ATTEMPTS = 2
 
     def __init__(  # pylint: disable=too-many-positional-arguments,too-many-arguments
@@ -372,10 +378,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         but a straight pyserial serial.Serial object can also be used.
 
         :param connection: Object supporting read() and write().
-          E.g. serial.Serial().
-        :param int verbosity: Verbosity level. 0 is quite, 10 is verbose.
+            E.g. serial.Serial().
+        :param int verbosity: Verbosity level. 0 is quiet, 10 is verbose.
         :param ShowProgress show_progress: ShowProgress context manager.
-           Set to None to disable progress bar output.
+            Set to None to disable progress bar output.
         """
         self.connection = connection
         self.verbosity = verbosity
@@ -761,16 +767,62 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
             self.connection.timeout = previous_timeout_value
         self.debug(10, "    Extended Erase memory done")
 
-    def write_protect(self, pages):
+    def write_protect(self, sectors=None) -> None:
         """Enable write protection on the given flash pages."""
+
+        if self.device is None:
+            raise Stm32LoaderError(
+                "Device type must be detected before write protection can be enabled."
+            )
+
+        if not self.device.write_protect_supported:
+            raise Stm32LoaderError(
+                f"Write protection support for '{self.device}' not currently implemented."
+            )
+
+        self.debug(10, "Enabling write protection")
+        if sectors is None:
+            if self.device.flash is None:
+                raise Stm32LoaderError(
+                    f"Device flash info is missing for family '{self.device.family.name}'"
+                )
+            if self.device.flash.num_pages() is None:
+                raise Stm32LoaderError(
+                    f"Device flash page info is missing for device '{self.device.device_name}'"
+                )
+            num_sectors = self.device.flash.num_sectors()
+            if num_sectors is None:
+                raise Stm32LoaderError(
+                    f"Device flash sector info is missing for device '{self.device.device_name}'"
+                )
+            # The 'number of sectors' is 0-based
+            num_sectors -= 1
+            sectors = bytearray(list(range(0, num_sectors + 1)))
+        else:
+            num_sectors = len(sectors) - 1
+            bad_sectors = [s for s in sectors if s < 0 or s > 255]
+            if len(bad_sectors) > 0:
+                raise PageIndexError(
+                    "Write protection only supports sector indices up to 255, but got "
+                    f"{bad_sectors}."
+                )
+
+        if num_sectors > 255:
+            raise DataLengthError("Write protection only supports up to 256 sectors.")
+
+        self.debug(
+            5, f"Write protecting {num_sectors} sectors, flash size: {self.device.flash.size}"
+        )
+
         self.command(self.Command.WRITE_PROTECT, "Write protect")
-        nr_of_pages = (len(pages) - 1) & 0xFF
-        page_numbers = bytearray(pages)
-        checksum = reduce(operator.xor, page_numbers, nr_of_pages)
-        self.write_and_ack("0x63 write protect failed", nr_of_pages, page_numbers, checksum)
+        checksum = reduce(operator.xor, sectors, num_sectors)
+        self.write_and_ack("0x63 write protect failed", num_sectors, sectors, checksum)
+
+        time.sleep(0.1)
+        self.reset_from_system_memory()
         self.debug(10, "    Write protect done")
 
-    def write_unprotect(self):
+    def write_unprotect(self) -> None:
         """Disable write protection of the flash memory."""
         self.debug(10, "Disabling write protection")
         self.command(self.Command.WRITE_UNPROTECT, "Write unprotect")

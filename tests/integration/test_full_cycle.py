@@ -13,12 +13,33 @@ def test_erase_write_verify_passes():
         erase=True,
         write=True,
         verify=True,
-        write_unprotect=True,
+        write_protect=False,
+        write_unprotect=False,
         firmware_file=FIRMWARE_FILE,
         family=None,
     )
     loader.connection = FakeConnection()
     loader.stm32 = Stm32Bootloader(loader.connection, device_family="F1", verbosity=5)
+
+    loader.detect_device()
+    loader.read_device_uid()
+    loader.read_flash_size()
+    loader.perform_commands()
+
+
+def test_write_protect_passes():
+    loader = Stm32Loader()
+    loader.configuration = FakeConfiguration(
+        erase=False,
+        write=False,
+        verify=False,
+        write_protect=True,
+        write_unprotect=True,
+        firmware_file=None,
+        family=None,
+    )
+    loader.connection = FakeConnection()
+    loader.stm32 = Stm32Bootloader(loader.connection, verbosity=5)
 
     loader.detect_device()
     loader.read_device_uid()

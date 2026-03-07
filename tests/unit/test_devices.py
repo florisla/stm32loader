@@ -3,6 +3,7 @@ from devices_stm32flash import DEVICES as STM32FLASH_DEVICES
 
 from stm32loader.bootloader import CHIP_IDS, Stm32Bootloader
 from stm32loader.device_family import DEVICE_FAMILIES, DeviceFamily
+from stm32loader.device_info import Flash
 from stm32loader.devices import DEVICES
 
 KNOWN_DUPLICATE_DEVICE_NAMES = [
@@ -76,7 +77,7 @@ def test_ram_size_is_multiple_of_256(dev):
     ids=lambda dev: str(dev).replace(" ", "-"),
 )
 def test_flash_size_multiple_of_16k(dev):
-    if dev.flash_size == 0:
+    if dev.flash_size is None:
         return
 
     assert isinstance(dev.flash_size, int)
@@ -228,6 +229,97 @@ def test_stm32flash_ram_addresses_match(device):
         f"RAM end differs for device: '{device.device_name}' 0x{device.product_id:03X}:"
         f" 0x{device.ram[1]:08X} vs 0x{ref['ram_end']:08X}."
     )
+
+
+@pytest.mark.parametrize(
+    "device",
+    DEVICES.values(),
+    ids=lambda device: str(device).replace(" ", "-"),
+)
+def test_num_pages(device):
+    if device.flash is None:
+        return
+
+    if device.flash.size is None or device.flash.page_size is None:
+        assert device.flash.num_pages() is None
+        return
+
+    num_pages = device.flash.num_pages()
+    assert num_pages is not None, f"{device} flash page info is missing"
+    assert num_pages > 0, f"{device} flash page count is not positive: {num_pages}"
+
+
+def test_flash_num_pages():
+    # Like the STM32F301
+    flash = Flash(
+        start=0x08000000, end=0x08000000 + 64 * 1024, page_size=2 * 1024, pages_per_sector=2
+    )
+
+    assert flash.num_pages() == 32
+
+
+def test_flash_num_pages_mixed_page_sizes():
+    flash = Flash(
+        start=0x08000000,
+        end=0x08000000 + 16 * 1024,
+        page_size=[2 * 1024] * 4 + [4 * 1024] * 2,
+        pages_per_sector=1,
+    )
+
+    assert flash.num_pages() == 6
+
+
+def test_flash_num_pages_no_flash_size():
+    # Like the STM32F301
+    flash = Flash(start=None, end=None, page_size=2 * 1024, pages_per_sector=2)
+
+    assert flash.num_pages() is None
+
+
+@pytest.mark.parametrize(
+    "device",
+    DEVICES.values(),
+    ids=lambda device: str(device).replace(" ", "-"),
+)
+def test_num_sectors_is_populated_when_write_protection_supported(device):
+    if device.flash is None or device.write_protect_supported is False:
+        return
+
+    assert device.flash.num_sectors() is not None, f"{device} flash sector info is missing"
+
+
+def test_flash_num_sectors():
+    # Like the STM32F301
+    flash = Flash(
+        start=0x08000000, end=0x08000000 + 64 * 1024, page_size=2 * 1024, pages_per_sector=2
+    )
+
+    assert flash.num_sectors() == 16
+
+
+def test_flash_num_sectors_mixed_page_sizes():
+    flash = Flash(
+        start=0x08000000,
+        end=0x08000000 + 16 * 1024,
+        page_size=[2 * 1024] * 4 + [4 * 1024] * 2,
+        pages_per_sector=1,
+    )
+
+    assert flash.num_sectors() == 6
+
+
+def test_flash_num_sectors_no_flash_size():
+    flash = Flash(start=None, end=None, page_size=2 * 1024, pages_per_sector=2)
+
+    assert flash.num_sectors() is None
+
+
+def test_flash_num_sectors_with_max_num_sectors():
+    flash = Flash(
+        start=0x08000000, end=0x08000000 + 1024 * 1024, page_size=2 * 1024, pages_per_sector=2
+    )
+
+    assert flash.num_sectors() == 63
 
 
 def test_family_uid_address_matches_existing():

@@ -24,6 +24,7 @@ class DeviceFamily(enum.Enum):
     L4 = "L4"
     L5 = "L5"
     WBA = "WBA"
+    WB0 = "WB0"
     WB = "WB"
     WL = "WL"
     U5 = "U5"
@@ -80,7 +81,9 @@ DEVICE_FAMILIES = {
     DeviceFamily.C0: DeviceFamilyInfo("C0", bootloader_id_address=0x_1FFF_17FE),
     # RM0360
     DeviceFamily.F0: DeviceFamilyInfo(
-        "F0", flash_size_address=0x_1FFF_F7CC, option_bytes=(0x_1FFF_F800, 0x_1FFF_F80F)
+        "F0",
+        flash_size_address=0x_1FFF_F7CC,
+        option_bytes=(0x_1FFF_F800, 0x_1FFF_F80F),
     ),
     # RM0008
     DeviceFamily.F1: DeviceFamilyInfo(
@@ -89,8 +92,11 @@ DEVICE_FAMILIES = {
         flash_size_address=0x_1FFF_F7E0,
         option_bytes=(0x_1FFF_F800, 0x_1FFF_F80F),
     ),
+    # RM0033
     DeviceFamily.F2: DeviceFamilyInfo(
-        "F2", option_bytes=(0x_1FFF_C000, 0x_1FFF_C00F), bootloader_id_address=0x_1FFF_77DE
+        "F2",
+        option_bytes=(0x_1FFF_C000, 0x_1FFF_C00F),
+        bootloader_id_address=0x_1FFF_77DE,
     ),
     # RM0366, RM0365, RM0316, RM0313, RM4510
     DeviceFamily.F3: DeviceFamilyInfo(
@@ -100,7 +106,7 @@ DEVICE_FAMILIES = {
         flash_page_size=2048,
         bootloader_id_address=0x_1FFF_F796,
     ),
-    # RM0090
+    # RM0090, RM0390, RM0383, RM0402, RM0401, RM0368, RM0430, RM0386
     DeviceFamily.F4: DeviceFamilyInfo(
         "F4",
         uid_address=0x_1FFF_7A10,
@@ -108,7 +114,7 @@ DEVICE_FAMILIES = {
         bootloader_id_address=0x_1FFF_76DE,
         flags=DeviceFlag.LONG_UID_ACCESS,
     ),
-    # RM0385
+    # RM0385, RM0431
     DeviceFamily.F7: DeviceFamilyInfo(
         "F7",
         uid_address=0x_1FF0_F420,
@@ -162,6 +168,10 @@ DEVICE_FAMILIES = {
     ),
     DeviceFamily.WB: DeviceFamilyInfo(
         "WB",
+    ),
+    DeviceFamily.WB0: DeviceFamilyInfo(
+        "WB0",
+        # TODO: mark write protection as not supported
     ),
     # RM0453
     DeviceFamily.WL: DeviceFamilyInfo(

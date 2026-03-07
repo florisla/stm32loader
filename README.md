@@ -187,6 +187,6 @@ adapter (it needs to toggle, whereas `BOOT0` does not).
 
 ## Not currently supported
 
-* Command-line argument for write protection.
+* Command-line argument for write protection for some devices (e.g. those with dual-bank flash).
 * STM8 devices (ST `UM0560`).
 * Other bootloader protocols (e.g. I2C, HEX -> implemented in `stm32flash`).

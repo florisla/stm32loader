@@ -61,6 +61,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0801_0000, 1 * kB, 4),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F7A6,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F0",
@@ -72,6 +73,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0800_8000, 1 * kB, 4),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F7A6,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x442 ?
     DeviceInfo(
@@ -85,6 +87,7 @@ DEVICE_DETAILS = [
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F796,
         flags=DeviceFlag.OBL_LAUNCH,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x445 ?
     DeviceInfo(
@@ -97,6 +100,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0800_8000, 1 * kB, 4),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F6A6,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F0",
@@ -108,6 +112,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0800_8000, 1 * kB, 4),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F6A6,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x448 ?
     DeviceInfo(
@@ -120,6 +125,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0802_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F6A6,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F0",
@@ -131,6 +137,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0802_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F6A6,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F0",
@@ -143,6 +150,7 @@ DEVICE_DETAILS = [
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F796,
         flags=DeviceFlag.OBL_LAUNCH,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F1",
@@ -154,6 +162,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_F000, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0800_8000, 1 * kB, 4),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F1",
@@ -165,6 +174,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_F000, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0802_0000, 1 * kB, 4),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F1",
@@ -188,6 +198,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0802_0000, 1 * kB, 4),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F7D6,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F1",
@@ -200,6 +211,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0808_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F7D6,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F1",
@@ -211,6 +223,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_B000, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0804_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F1",
@@ -223,6 +236,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0810_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F7D6,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x411 ?
     DeviceInfo(
@@ -232,8 +246,9 @@ DEVICE_DETAILS = [
         0x20,
         ram=(0x_2000_2000, 0x_2002_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0810_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0810_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F2",
@@ -242,8 +257,9 @@ DEVICE_DETAILS = [
         0x33,
         ram=(0x_2000_2000, 0x_2002_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0810_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0810_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x432 ?
     DeviceInfo(
@@ -256,6 +272,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0804_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F7A6,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F3",
@@ -267,6 +284,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0804_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
         bootloader_id_address=0x_1FFF_F7A6,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x422 ?
     DeviceInfo(
@@ -278,6 +296,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_D800, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0804_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F3",
@@ -288,6 +307,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_D800, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0804_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x439 ?
     DeviceInfo(
@@ -299,6 +319,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_D800, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0801_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F3",
@@ -309,6 +330,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_D800, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0801_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F3",
@@ -319,6 +341,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_D800, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0801_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x446 ?
     DeviceInfo(
@@ -330,6 +353,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_D800, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0808_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F3",
@@ -340,6 +364,7 @@ DEVICE_DETAILS = [
         system=(0x_1FFF_D800, 0x_1FFF_F800),
         flash=(0x_0800_0000, 0x_0808_0000, 2 * kB, 2),
         option=(0x_1FFF_F800, 0x_1FFF_F80F),
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x413 ?
     DeviceInfo(
@@ -360,9 +385,10 @@ DEVICE_DETAILS = [
         0x91,
         ram=(0x_2000_3000, 0x_2002_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0810_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0810_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
         bootloader_id_address=0x_1FFF_77DE,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x419 ?
     DeviceInfo(
@@ -393,8 +419,9 @@ DEVICE_DETAILS = [
         0xD1,
         ram=(0x_2000_3000, 0x_2001_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0804_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0804_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F4",
@@ -403,8 +430,9 @@ DEVICE_DETAILS = [
         0xD1,
         ram=(0x_2000_3000, 0x_2001_8000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0808_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0808_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F4",
@@ -413,8 +441,9 @@ DEVICE_DETAILS = [
         0xB1,
         ram=(0x_2000_3000, 0x_2000_8000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0802_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0802_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F4",
@@ -423,8 +452,9 @@ DEVICE_DETAILS = [
         0xD0,
         ram=(0x_2000_3000, 0x_2002_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0808_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0808_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F4",
@@ -433,8 +463,9 @@ DEVICE_DETAILS = [
         0x90,
         ram=(0x_2000_3000, 0x_2004_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0810_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0810_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F4",
@@ -443,8 +474,9 @@ DEVICE_DETAILS = [
         0x90,
         ram=(0x_2000_3000, 0x_2002_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0808_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0808_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F4",
@@ -463,7 +495,7 @@ DEVICE_DETAILS = [
         0x90,
         ram=(0x_2000_3000, 0x_2005_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7800),
-        flash=(0x_0800_0000, 0x_0818_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0818_0000, Flash.F4_EXTENDED_PAGE_SIZE),
         option=(0x_1FFF_C000, 0x_1FFF_C00F),
     ),
     DeviceInfo(
@@ -473,8 +505,9 @@ DEVICE_DETAILS = [
         0x90,
         ram=(0x_2000_4000, 0x_2004_0000),
         system=(0x_1FF0_0000, 0x_1FF0_EDC0),
-        flash=(0x_0800_0000, 0x_0808_0000, Flash.F2_F4_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0808_0000, Flash.F2_F4_PAGE_SIZE, 1),
         option=(0x_1FFF_0000, 0x_1FFF_001F),
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x449 ?
     DeviceInfo(
@@ -484,8 +517,9 @@ DEVICE_DETAILS = [
         0x70,
         ram=(0x_2000_4000, 0x_2005_0000),
         system=(0x_1FF0_0000, 0x_1FF0_EDC0),
-        flash=(0x_0800_0000, 0x_0810_0000, Flash.F7_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0810_0000, Flash.F7_PAGE_SIZE, 1),
         option=(0x_1FFF_0000, 0x_1FFF_001F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F7",
@@ -494,8 +528,9 @@ DEVICE_DETAILS = [
         0x90,
         ram=(0x_2000_4000, 0x_2005_0000),
         system=(0x_1FF0_0000, 0x_1FF0_EDC0),
-        flash=(0x_0800_0000, 0x_0810_0000, Flash.F7_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0810_0000, Flash.F7_PAGE_SIZE, 1),
         option=(0x_1FFF_0000, 0x_1FFF_001F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "F7",
@@ -504,8 +539,9 @@ DEVICE_DETAILS = [
         0x93,
         ram=(0x_2000_4000, 0x_2008_0000),
         system=(0x_1FF0_0000, 0x_1FF0_EDC0),
-        flash=(0x_0800_0000, 0x_0820_0000, Flash.F7_PAGE_SIZE),
+        flash=(0x_0800_0000, 0x_0820_0000, Flash.F7_PAGE_SIZE, 1),
         option=(0x_1FFF_0000, 0x_1FFF_001F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "G0",
@@ -514,9 +550,10 @@ DEVICE_DETAILS = [
         0x53,
         ram=(0x_2000_1000, 0x_2000_2000),
         system=(0x_1FFF_0000, 0x_1FFF_2000),
-        flash=(0x_0800_0000, 0x_0801_0000, 2 * kB),
+        flash=(0x_0800_0000, 0x_0801_0000, 2 * kB, 1),
         option=(0x_1FFF_7800, 0x_1FFF_787F),
         bootloader_id_address=0x_1FFF_1FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "G0",
@@ -525,9 +562,10 @@ DEVICE_DETAILS = [
         0xB3,
         ram=(0x_2000_2700, 0x_2000_9000),
         system=(0x_1FFF_0000, 0x_1FFF_7000),
-        flash=(0x_0800_0000, 0x_0802_0000, 2 * kB),
+        flash=(0x_0800_0000, 0x_0802_0000, 2 * kB, 1),
         option=(0x_1FFF_7800, 0x_1FFF_787F),
         bootloader_id_address=0x_1FFF_6FFE,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x467 ?
     # FIXME dual banks for system
@@ -623,9 +661,10 @@ DEVICE_DETAILS = [
         0x93,
         ram=((0x_2000_4100, 0x_2002_0000), (0x_2400_4000, 0x_2405_0000)),
         system=(0x_1FF0_0000, 0x_1FF1_E800),
-        flash=(0x_0800_0000, 0x_0810_0000, 128 * kB),
+        flash=(0x_0800_0000, 0x_0810_0000, 128 * kB, 1),
         option=None,
         bootloader_id_address=0x_1FF1_E7FE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "H7",
@@ -634,9 +673,10 @@ DEVICE_DETAILS = [
         0x91,
         ram=((0x_2000_4100, 0x_2002_0000), (0x_2400_5000, 0x_2408_0000)),
         system=(0x_1FF0_0000, 0x_1FF1_E800),
-        flash=(0x_0800_0000, 0x_0820_0000, 128 * kB),
+        flash=(0x_0800_0000, 0x_0820_0000, 128 * kB, 1),
         option=None,
         bootloader_id_address=0x_1FF1_E7FE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "H7",
@@ -659,6 +699,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0800_4000, 128, 32),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_0FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L0",
@@ -670,6 +711,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0800_8000, 128, 32),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_0FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L0",
@@ -681,6 +723,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0801_0000, 128, 32),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_0FFE,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x447 ?
     # Note: STM32flash has 0x_2000_2000 as lower system range.
@@ -694,6 +737,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0803_0000, 128, 32),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_1FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L0",
@@ -705,6 +749,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0803_0000, 128, 32),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_1FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L1",
@@ -717,6 +762,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0802_0000, 256, 16),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_0FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L1",
@@ -728,6 +774,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0802_0000, 256, 16),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_0FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L1",
@@ -739,6 +786,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0804_0000, 256, 16),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_1FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L1",
@@ -750,6 +798,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0806_0000, 256, 16),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_1FFE,
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L1",
@@ -761,6 +810,7 @@ DEVICE_DETAILS = [
         flash=(0x_0800_0000, 0x_0808_0000, 256, 16),
         option=(0x_1FF8_0000, 0x_1FF8_001F),
         bootloader_id_address=0x_1FF0_1FFE,
+        write_protect_supported=True,
     ),
     # Note: Stm32flash has 0x_2000_3100 as ram start.
     DeviceInfo(
@@ -771,8 +821,9 @@ DEVICE_DETAILS = [
         bid=0xD1,
         ram=(0x_2000_2100, 0x_2000_8000),
         system=(0x_1FFF_0000, 0x_1FFF_7000),
-        flash=(0x_0800_0000, 0x_0802_0000, 2 * kB),
+        flash=(0x_0800_0000, 0x_0802_0000, 2 * kB, 1, 256),
         option=(0x_1FFF_7800, 0x_1FFF_780F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L4",
@@ -781,8 +832,9 @@ DEVICE_DETAILS = [
         0x91,
         ram=(0x_2000_3100, 0x_2000_C000),
         system=(0x_1FFF_0000, 0x_1FFF_7000),
-        flash=(0x_0800_0000, 0x_0804_0000, 2 * kB),
+        flash=(0x_0800_0000, 0x_0804_0000, 2 * kB, 1, 256),
         option=(0x_1FFF_7800, 0x_1FFF_780F),
+        write_protect_supported=True,
     ),
     DeviceInfo(
         "L4",
@@ -791,9 +843,10 @@ DEVICE_DETAILS = [
         0x92,
         ram=(0x_2000_3100, 0x_2002_0000),
         system=(0x_1FFF_0000, 0x_1FFF_7000),
-        flash=(0x_0800_0000, 0x_0808_0000, 2 * kB),
+        flash=(0x_0800_0000, 0x_0808_0000, 2 * kB, 1, 256),
         option=(0x_1FFF_7800, 0x_1FFF_780F),
         flags=DeviceFlag.CLEAR_PEMPTY,
+        write_protect_supported=True,
     ),
     # FIXME different flash size for both devices with PID=0x415 ?
     DeviceInfo(

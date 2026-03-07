@@ -87,6 +87,10 @@ def parse_arguments(arguments):
         "--write-unprotect", action="store_true", help="Disable write protection before flashing"
     )
 
+    parser.add_argument(
+        "--write-protect", action="store_true", help="Enable write protection after flashing"
+    )
+
     parser.add_argument("-w", "--write", action="store_true", help="Write file content to flash.")
 
     parser.add_argument(

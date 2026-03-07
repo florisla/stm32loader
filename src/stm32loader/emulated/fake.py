@@ -117,6 +117,15 @@ class FakeConnection:
                 flash_offset = address - 0x_0800_0000
                 self.flash_memory[flash_offset : flash_offset + byte_count] = data
 
+            elif command_value == self.Command.WRITE_PROTECT.value:
+                number_of_pages_bytes = yield
+                number_of_pages = struct.unpack("B", number_of_pages_bytes)[0]
+                _page_numbers_bytes = yield
+                assert len(_page_numbers_bytes) == number_of_pages + 1, (
+                    f"{len(_page_numbers_bytes)} != {number_of_pages + 1}"
+                )
+                _crc = yield
+
             elif command_value == self.Command.WRITE_UNPROTECT.value:
                 pass
 
@@ -140,12 +149,16 @@ class FakeConnection:
 class FakeConfiguration:
     """Represent a configuration for test purposes."""
 
-    def __init__(self, erase, write, verify, write_unprotect, firmware_file, family=None):
+    def __init__(
+        self, erase, write, verify, write_protect, write_unprotect, firmware_file, family=None
+    ):
         self.erase = erase
         self.write = write
+        self.read = False
         self.verify = verify
-        self.data_file = firmware_file
+        self.write_protect = write_protect
         self.write_unprotect = write_unprotect
+        self.data_file = firmware_file
         self.unprotect = False
         self.protect = False
         self.length = None
