@@ -989,11 +989,9 @@ DEVICE_DETAILS = [
         system=(0x_1000_0000, 0x_1000_0800),
         flash=(0x_1004_0000, 0x_1008_0000, 2 * kB),
     ),
-    # There is a 32kB RAM variant of BlueNRG-LP, but
-    # that can't be determined from bootloader
     DeviceInfo(
         "NRG",
-        "BlueNRG-LP",
+        "STM32WB06/07 (BlueNRG-LP)",
         pid=0x3F,
         bid=None,
         ram=(0x_2000_0000, 0x_2001_0000),
@@ -1002,12 +1000,30 @@ DEVICE_DETAILS = [
     ),
     DeviceInfo(
         "NRG",
-        "BlueNRG-LPS",
+        "STM32WB05 (BlueNRG-LPS)",
         pid=0x3B,
         bid=None,
         ram=(0x_2000_0000, 0x_2000_6000),
         system=(0x_1000_0000, 0x_1000_1800),
         flash=(0x_1004_0000, 0x_1007_0000, 2 * kB),
+    ),
+    DeviceInfo(
+        "NRG",
+        "STM32WB09",
+        pid=0x06,
+        bid=None,
+        ram=(0x_2000_0000, 0x_2001_0000),
+        system=(0x_1000_0000, 0x_1000_1800),
+        flash=(0x_1004_0000, 0x_100C_0000, 2 * kB),
+    ),
+    DeviceInfo(
+        "NRG",
+        "STM32WL3x",
+        pid=0x5F,
+        bid=None,
+        ram=(0x_2000_0000, 0x_2000_8000),
+        system=(0x_1000_0000, 0x_1000_1800),
+        flash=(0x_1004_0000, 0x_1008_0000, 2 * kB),
     ),
     # Wiznet W7500
     DeviceInfo("WIZ", "Wiznet W7500", 0x801, bid=None, ram=None, system=None),

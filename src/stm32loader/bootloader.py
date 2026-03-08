@@ -492,6 +492,9 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         length = bytearray(self.connection.read())[0]
         id_data = bytearray(self.connection.read(length + 1))
         self._wait_for_ack("0x02 end")
+        if self.device_family == DeviceFamily.NRG.value:
+            # BlueNRG-lineage devices hold the PID in the 3rd byte
+            return id_data[2]
         _device_id = reduce(lambda x, y: x * 0x100 + y, id_data)
         return _device_id
 
@@ -501,6 +504,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
             # F4, L0 families.
             flash_size, _uid = self._get_flash_size_and_uid_bulk()
             return flash_size
+        if self.device.family.flash_size_address is None:
+            return int(self.device.flash_size / 1024)
         return self._get_flash_size_raw()
 
     def get_uid(self):
@@ -576,11 +581,6 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
     def detect_device(self) -> None:
         """Detect the device type and store in `device`."""
         product_id = self.get_id()
-
-        # BlueNRG devices have the silicon cut version in the
-        # upper bytes of the PID.
-        if self.device_family == DeviceFamily.NRG.value:
-            product_id &= 0xFF
 
         # Look up device details based on ID *without* bootloader ID.
         self.device = DEVICES.get((product_id, None))

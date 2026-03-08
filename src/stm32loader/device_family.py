@@ -30,8 +30,10 @@ class DeviceFamily(enum.Enum):
     # Not sure if these really exist?
     W = "W"
 
-    # Non-STM devices.
+    # BlueNRG-lineage devices
     NRG = "NRG"
+
+    # Non-STM devices.
     WIZ = "WIZ"
 
 
@@ -173,19 +175,26 @@ DEVICE_FAMILIES = {
     DeviceFamily.W: DeviceFamilyInfo(
         "W",
     ),
-    # ST BlueNRG series; see ST AN4872 (BlueNRG-1/2)
-    # and AN5471 (BlueNRG-LP/LPS).
-    # BlueNRG requires parity 'none'.
-    #   Product ID:
-    #       Byte 1: metal fix (masked out)
-    #       Byte 2: mask set (masked out)
-    #       Byte 3: 0xHL
-    #           H: [0] BlueNRG-1, [2] BlueNRG-2, [3] BlueNRG-LP/LPS
-    #           L: [3] 160kB, [B] 192kB, [F] 256kB
+    # BlueNRG-lineage devices
+    # AN4872: BlueNRG-1/2
+    # AN5471: STM32WB05/06/07/09 (previously sold as BlueNRG-LP/LPS)
+    # AN5920: STM32WL3x
+    #   The bootloader requires parity 'none'!
+    #   The GetID command returns 3 or 4 bytes:
+    #       Byte 1: Silicon metal fix version
+    #       Byte 2: Silicon mask set version
+    #       Byte 3: Product ID
+    #               [03] BlueNRG-1
+    #               [2F] BlueNRG-2
+    #               [3B] STM32WB05 (BlueNRG-LPS)
+    #               [3F] STM32WB06/07 (BlueNRG-LP)
+    #               [5F] STM32WL3
+    #               [06] STM32WB09
+    #       Byte 4: (0x1F, only on STM32WB09)
     #   There is no access to peripherals/system memory from bootloader,
-    #   so flash size and UID can not be read.
+    #   so flash size and UID can not be read directly
     #       NRG-1/2: flash_size_address=0x_4010_0014, uid_address=0x_1000_07F4
-    #       NRG-LP:  flash_size_address=0x_4000_1014, uid_address=0x_1000_1EF0
+    #       others:  flash_size_address=0x_4000_1014, uid_address=0x_1000_1EF0
     DeviceFamily.NRG: DeviceFamilyInfo(
         "NRG", flags=DeviceFlag.FORCE_PARITY_NONE, flash_page_size=2048
     ),

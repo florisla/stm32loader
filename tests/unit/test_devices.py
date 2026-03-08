@@ -13,8 +13,6 @@ KNOWN_DUPLICATE_DEVICE_NAMES = [
     "STM32L07xxx/08xxx",
     "STM32L47xxx/48xxx",
     "STM32F10xxx",
-    "BlueNRG-1",
-    "BlueNRG-2",
     "STM32W",
 ]
 
@@ -155,6 +153,8 @@ def test_stm32flash_device_names_match(device):
         0x801,
         0x03B,
         0x03F,
+        0x05F,
+        0x006
     )
     if not stm32flash_device and device.product_id in stm32loader_only:
         return
