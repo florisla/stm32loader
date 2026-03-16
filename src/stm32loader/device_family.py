@@ -33,6 +33,7 @@ class DeviceFamily(enum.Enum):
     # Non-STM devices.
     NRG = "NRG"
     WIZ = "WIZ"
+    GD32VW55x = "GD32VW55x"
 
 
 @enum.unique
@@ -48,6 +49,9 @@ class DeviceFlag(enum.IntEnum):
     # requires some data extraction.
     LONG_UID_ACCESS = 8
     FORCE_PARITY_NONE = 16
+    # For devices that don't have flash size register in system memory,
+    # use the flash size defined in device info directly.
+    FIXED_FLASH_SIZE = 32
 
 
 class DeviceFamilyInfo:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -191,6 +195,14 @@ DEVICE_FAMILIES = {
     ),
     DeviceFamily.WIZ: DeviceFamilyInfo(
         "WIZ",
+    ),
+    # GigaDevice GD32VW55x series.
+    # Uses 0x06 command to get part number instead of standard 0x02.
+    DeviceFamily.GD32VW55x: DeviceFamilyInfo(
+        "GD32VW55x",
+        flash_page_size=4096,
+        transfer_size=256,
+        flags=DeviceFlag.FIXED_FLASH_SIZE,
     ),
 }
 
