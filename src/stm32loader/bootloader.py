@@ -330,8 +330,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         # ST RM0433 section 4.2 FLASH main features
         "H7": 256,
         "G4": 256,
-        # GigaDevice GD32VW553 series
-        "GD32VW55x": 256,
+        # GigaDevice GD32VW553 series.
+        # In GD32 ISP Tool they send 240 bytes per transfer.
+        # In AN027 they suggest 252 bytes per transfer.
+        "GD32VW55x": 240,
     }
 
     FLASH_PAGE_SIZE = {
@@ -643,6 +645,13 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         # Now we can possibly *refine* the product: look up
         # with product ID *and* bootloader ID.
         self.device = DEVICES.get((product_id, bootloader_id), self.device)
+
+        # Update data_transfer_size and flash_page_size based on detected device family
+        detected_family = self.device.family.name
+        if detected_family in self.DATA_TRANSFER_SIZE:
+            self.data_transfer_size = self.DATA_TRANSFER_SIZE[detected_family]
+            self.flash_page_size = self.FLASH_PAGE_SIZE[detected_family]
+            self.device_family = detected_family
 
     def get_bootloader_id(self):
         """Get the bootloader ID by reading the 'bootloader ID' register."""

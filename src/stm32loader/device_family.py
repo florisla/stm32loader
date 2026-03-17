@@ -201,7 +201,7 @@ DEVICE_FAMILIES = {
     DeviceFamily.GD32VW55x: DeviceFamilyInfo(
         "GD32VW55x",
         flash_page_size=4096,
-        transfer_size=256,
+        transfer_size=240,
         flags=DeviceFlag.FIXED_FLASH_SIZE,
     ),
 }
