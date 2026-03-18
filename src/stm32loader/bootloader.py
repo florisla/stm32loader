@@ -307,7 +307,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
 
     DATA_TRANSFER_SIZE = {
         # In bytes.
-        "default": 256,
+        # Some devices(like L0) may support only 128 bytes each transfer
+        "default": 128,
         "F0": 256,
         "F1": 256,
         "F3": 256,
@@ -386,10 +387,28 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         self.verbosity = verbosity
         self.show_progress = show_progress or ShowProgress(None)
         self.extended_erase = False
-        self.data_transfer_size = self.DATA_TRANSFER_SIZE.get(device_family or "default")
-        self.flash_page_size = self.FLASH_PAGE_SIZE.get(device_family or "default")
-        self.device_family = device_family or "F1"
-        self.device = device
+        if device or device_family:     # using given device or device family
+            # give both device and device_family, use device first
+            if device:
+                self.device = device
+                self.device_family = device.family.name
+                if device_family and device_family != self.device_family:
+                    self.debug(0, f"Device family mismatch with the given device family: {device_family}")
+                    self.debug(0, f"Use device family: {self.device_family}")
+            elif device_family:
+                self.device_family = device_family
+                self.device = None
+        else:
+            self.device_family = None
+            self.device = None
+        self.update_transfer_info()
+
+    def update_transfer_info(self):
+        """Update transfer info based on the device family."""
+        self.data_transfer_size = self.DATA_TRANSFER_SIZE.get(self.device_family or "default")
+        self.flash_page_size = self.FLASH_PAGE_SIZE.get(self.device_family or "default")
+        self.debug(6, f"Data transfer size updated: {self.data_transfer_size} bytes")
+        self.debug(6, f"Flash page size updated: {self.flash_page_size} bytes")
 
     def write(self, *data):
         """Write the given data to the MCU."""
@@ -601,6 +620,13 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         # Now we can possibly *refine* the product: look up
         # with product ID *and* bootloader ID.
         self.device = DEVICES.get((product_id, bootloader_id), self.device)
+
+        if self.device:
+            if self.device_family is None:
+                self.device_family = self.device.family.name
+            else:
+                self.debug(1, f"Device family is already set to {self.device_family}. Not updating.")
+            self.update_transfer_info()
 
     def get_bootloader_id(self):
         """Get the bootloader ID by reading the 'bootloader ID' register."""
