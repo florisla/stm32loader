@@ -36,6 +36,7 @@ def write(connection):
 
 @pytest.fixture
 def bootloader(connection):
+    # STM32F358xx
     device = DEVICES.get((0x422, 0x50))
     assert device is not None, "Device not found in DEVICES mapping"
     return Stm32Bootloader(connection, device=device)
@@ -397,13 +398,20 @@ def test_get_pages_from_range_with_invalid_start_address_raises_page_index_error
 
 
 def test_get_pages_from_range_with_start_address_zero_returns_single_page(bootloader):
-    pages = bootloader.pages_from_range(0, 1024)
+    pages = bootloader.pages_from_range(0, 2048)
     assert pages == [0]
 
 
+def test_get_pages_from_range_with_end_too_small_raises_page_index_error(bootloader):
+    with pytest.raises(
+        PageIndexError, match="Erase .* address should be at a flash page boundary:.*0400.*0800"
+    ):
+        bootloader.pages_from_range(0, 1024)
+
+
 def test_get_pages_from_large_range_returns_multiple_pages(bootloader):
-    pages = bootloader.pages_from_range(5 * 1024, 20 * 1024)
-    assert pages == list(range(5, 20))
+    pages = bootloader.pages_from_range(4 * 1024, 20 * 1024)
+    assert pages == list(range(2, 10))
 
 
 def test_get_flash_size_for_standard_family(connection):
