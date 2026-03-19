@@ -387,18 +387,20 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         self.verbosity = verbosity
         self.show_progress = show_progress or ShowProgress(None)
         self.extended_erase = False
-        if device or device_family:     # using given device or device family
-            # give both device and device_family, use device first
-            if device:
-                self.device = device
-                self.device_family = device.family.name
-                if device_family and device_family != self.device_family:
-                    self.debug(0, f"Device family mismatch with the given device family: {device_family}")
-                    self.debug(0, f"Use device family: {self.device_family}")
-            elif device_family:
-                self.device_family = device_family
-                self.device = None
+
+        # Try to use given device or device family.
+        if device:
+            # When given both device and device_family, use device first.
+            self.device = device
+            self.device_family = device.family.name
+            if device_family and device_family != self.device_family:
+                self.debug(0, f"Device family mismatch with the given device family: {device_family}")
+                self.debug(0, f"Use device family: {self.device_family}")
+        elif device_family:
+            self.device_family = device_family
+            self.device = None
         else:
+            # No device or device_family given.
             self.device_family = None
             self.device = None
         self.update_transfer_info()
@@ -623,8 +625,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
 
         if self.device:
             if self.device_family is None:
+                # Device family is not manually set; take from auto-detected info.
                 self.device_family = self.device.family.name
             else:
+                # Device family is manually set.
                 self.debug(1, f"Device family is already set to {self.device_family}. Not updating.")
             self.update_transfer_info()
 
