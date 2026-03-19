@@ -156,6 +156,14 @@ def test_stm32flash_device_names_match(device):
         0x03F,
         0x05F,
         0x006,
+        0x50494B36,
+        0x504D4B36,
+        0x50494836,
+        0x504D4836,
+        0x50494B37,
+        0x504D4B37,
+        0x50494837,
+        0x504D4837,
     )
     if not stm32flash_device and device.product_id in stm32loader_only:
         return
