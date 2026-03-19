@@ -32,6 +32,8 @@ from stm32loader.device_family import DeviceFamily, DeviceFlag
 from stm32loader.device_info import DeviceInfo
 from stm32loader.devices import DEVICES
 
+# pylint: disable=too-many-lines
+
 CHIP_IDS = {
     # see ST AN2606 Table 136 Bootloader device-dependent parameters
     # 16 to 32 KiB
@@ -387,6 +389,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         self.verbosity = verbosity
         self.show_progress = show_progress or ShowProgress(None)
         self.extended_erase = False
+        self.supported_commands = {}
 
         # Try to use given device or device family.
         if device:
@@ -394,7 +397,9 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
             self.device = device
             self.device_family = device.family.name
             if device_family and device_family != self.device_family:
-                self.debug(0, f"Device family mismatch with the given device family: {device_family}")
+                self.debug(
+                    0, f"Device family mismatch with the given device family: {device_family}"
+                )
                 self.debug(0, f"Use device family: {self.device_family}")
         elif device_family:
             self.device_family = device_family
@@ -625,11 +630,14 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
 
         if self.device:
             if self.device_family is None:
-                # Device family is not manually set; take from auto-detected info.
+                # Device family is not manually set.
+                # Take from auto-detected info.
                 self.device_family = self.device.family.name
             else:
                 # Device family is manually set.
-                self.debug(1, f"Device family is already set to {self.device_family}. Not updating.")
+                self.debug(
+                    1, f"Device family is already set to {self.device_family}. Not updating."
+                )
             self.update_transfer_info()
 
     def get_bootloader_id(self):
