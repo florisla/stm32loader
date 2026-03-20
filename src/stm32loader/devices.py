@@ -1081,11 +1081,13 @@ DEVICE_DETAILS = [
     # Wiznet W7500
     DeviceInfo("WIZ", "Wiznet W7500", 0x801, bid=None, ram=None, system=None),
     # GigaDevice GD32VW553 series
-    # Uses 0x06 command to get part number (pid is 4-byte ASCII in little-endian)
-    # Find these pid in GD32_ISP_CLI(Linux)->libGD_MCU_DLL.so->BuildMap_GD32103
+    # Uses 0x06 command to get part number (pid is 4-byte ASCII
+    # in little-endian).
+    # Find these pid in GD32_ISP_CLI(Linux)->libGD_MCU_DLL.so
+    # ->BuildMap_GD32103
     # pid "6KIP" = 0x36 0x4B 0x49 0x50 -> 0x50494B36
     DeviceInfo(
-        "GD32VW55x",
+        "GD32VW55X",
         "GD32VW553KIQ6",
         pid=0x50494B36,
         bid=None,
@@ -1096,7 +1098,7 @@ DEVICE_DETAILS = [
     ),
     # pid "6KMP" = 0x36 0x4B 0x4D 0x50 -> 0x504D4B36
     DeviceInfo(
-        "GD32VW55x",
+        "GD32VW55X",
         "GD32VW553KMQ6",
         pid=0x504D4B36,
         bid=None,
@@ -1107,7 +1109,7 @@ DEVICE_DETAILS = [
     ),
     # pid "6HIP" = 0x36 0x48 0x49 0x50 -> 0x50494836
     DeviceInfo(
-        "GD32VW55x",
+        "GD32VW55X",
         "GD32VW553HIQ6",
         pid=0x50494836,
         bid=None,
@@ -1118,7 +1120,7 @@ DEVICE_DETAILS = [
     ),
     # pid "6HMP" = 0x36 0x48 0x4D 0x50 -> 0x504D4836
     DeviceInfo(
-        "GD32VW55x",
+        "GD32VW55X",
         "GD32VW553HMQ6",
         pid=0x504D4836,
         bid=None,
@@ -1129,7 +1131,7 @@ DEVICE_DETAILS = [
     ),
     # pid "7KIP" = 0x37 0x4B 0x49 0x50 -> 0x50494B37
     DeviceInfo(
-        "GD32VW55x",
+        "GD32VW55X",
         "GD32VW553KIQ7",
         pid=0x50494B37,
         bid=None,
@@ -1140,7 +1142,7 @@ DEVICE_DETAILS = [
     ),
     # pid "7KMP" = 0x37 0x4B 0x4D 0x50 -> 0x504D4B37
     DeviceInfo(
-        "GD32VW55x",
+        "GD32VW55X",
         "GD32VW553KMQ7",
         pid=0x504D4B37,
         bid=None,
@@ -1151,7 +1153,7 @@ DEVICE_DETAILS = [
     ),
     # pid "7HIP" = 0x37 0x48 0x49 0x50 -> 0x50494837
     DeviceInfo(
-        "GD32VW55x",
+        "GD32VW55X",
         "GD32VW553HIQ7",
         pid=0x50494837,
         bid=None,
@@ -1162,7 +1164,7 @@ DEVICE_DETAILS = [
     ),
     # pid "7HMP" = 0x37 0x48 0x4D 0x50 -> 0x504D4837
     DeviceInfo(
-        "GD32VW55x",
+        "GD32VW55X",
         "GD32VW553HMQ7",
         pid=0x504D4837,
         bid=None,

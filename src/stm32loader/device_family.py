@@ -36,7 +36,7 @@ class DeviceFamily(enum.Enum):
 
     # Non-STM devices.
     WIZ = "WIZ"
-    GD32VW55x = "GD32VW55x"
+    GD32VW55X = "GD32VW55X"
 
 
 @enum.unique
@@ -214,8 +214,8 @@ DEVICE_FAMILIES = {
     ),
     # GigaDevice GD32VW55x series.
     # Uses 0x06 command to get part number instead of standard 0x02.
-    DeviceFamily.GD32VW55x: DeviceFamilyInfo(
-        "GD32VW55x",
+    DeviceFamily.GD32VW55X: DeviceFamilyInfo(
+        "GD32VW55X",
         flash_page_size=4096,
         transfer_size=240,
     ),
