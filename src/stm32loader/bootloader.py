@@ -90,6 +90,16 @@ CHIP_IDS = {
     # Cortex-M0 MCU with hardware TCP/IP and MAC
     # (SweetPeas custom bootloader)
     0x801: "Wiznet W7500",
+    # GigaDevice GD32VW55x series
+    # Uses 0x06 command to get part number (pid is 4-byte ASCII in little-endian)
+    0x50494B36: "GD32VW553KIQ6",
+    0x504D4B36: "GD32VW553KMQ6",
+    0x50494836: "GD32VW553HIQ6",
+    0x504D4836: "GD32VW553HMQ6",
+    0x50494B37: "GD32VW553KIQ7",
+    0x504D4B37: "GD32VW553KMQ7",
+    0x50494837: "GD32VW553HIQ7",
+    0x504D4837: "GD32VW553HMQ7",
 }
 
 
@@ -215,6 +225,9 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         WRITE_PROTECT = 0x63
         WRITE_UNPROTECT = 0x73
 
+        # GD-specific command to get part number (GD32VW553 series)
+        GET_GD_ID = 0x06
+
         # not really listed under commands, but still...
         # 'wake the bootloader' == 'activate USART' == 'synchronize'
         SYNCHRONIZE = 0x7F
@@ -324,6 +337,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         # ST RM0433 section 4.2 FLASH main features
         "H7": 256,
         "G4": 256,
+        # GigaDevice GD32VW553 series.
+        # In GD32 ISP Tool they send 240 bytes per transfer.
+        # In AN027 they suggest 252 bytes per transfer.
+        "GD32VW55x": 240,
     }
 
     FLASH_PAGE_SIZE = {
@@ -359,6 +376,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         "G4": 2048,  # this is valid only for dual bank mode
         # ST RM0433 section 4.2 FLASH main features
         "H7": 128 * 1024,
+        # GD32VW55x series
+        "GD32VW55x": 4096,
     }
 
     device: DeviceInfo | None
@@ -529,6 +548,24 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         _device_id = reduce(lambda x, y: x * 0x100 + y, id_data)
         return _device_id
 
+    def get_gd_id(self):
+        """Send the 'Get GD ID' command and return the chip/product/device ID."""
+        self.command(self.Command.GET_GD_ID, "Get GD ID")
+        length = bytearray(self.connection.read())[0]
+        # GD32 0x06 command returns N+1 bytes where N is the count,
+        # but the last byte is ACK, not part of data
+        id_data = bytearray(self.connection.read(length))
+        self._wait_for_ack("0x06 end")
+        # Convert 4-byte part number to pid (little-endian 32-bit integer)
+        # For GD32 devices, the part number is returned as ASCII characters
+        # Example: "7HMP" -> 0x37 0x48 0x4D 0x50 -> 0x504D4837
+        _part_number_to_pid = lambda data: (
+            (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | data[0]
+            if len(data) >= 4 else 0
+        )
+        _device_id = _part_number_to_pid(id_data)
+        return _device_id
+
     def get_flash_size(self):
         """Return the MCU's flash size in kilobytes."""
         if self.device.flags & DeviceFlag.LONG_UID_ACCESS:
@@ -611,7 +648,11 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
 
     def detect_device(self) -> None:
         """Detect the device type and store in `device`."""
-        product_id = self.get_id()
+        product_id = None
+        try:
+            product_id = self.get_id()
+        except CommandError:
+            product_id = self.get_gd_id()
 
         # Look up device details based on ID *without* bootloader ID.
         self.device = DEVICES.get((product_id, None))
