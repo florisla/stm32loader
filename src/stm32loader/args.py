@@ -41,13 +41,10 @@ class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefau
 
         return [tweak_action(action) for action in actions]
 
-    # Python < 3.13 builds the usage line here.
-    def _format_actions_usage(self, actions, groups):
-        return super()._format_actions_usage(self._require_port(actions), groups)  # pylint: disable=no-member
-
-    # Python >= 3.13 builds the usage line here.
-    def _get_actions_usage_parts(self, actions, groups):
-        return super()._get_actions_usage_parts(self._require_port(actions), groups)  # pylint: disable=no-member
+    # The entry point for the usage line in all Python versions. The helpers
+    # it calls differ between (patch) versions, so don't hook into those.
+    def _format_usage(self, usage, actions, groups, prefix):
+        return super()._format_usage(usage, self._require_port(actions), groups, prefix)  # pylint: disable=no-member
 
 
 def _auto_int(x):
