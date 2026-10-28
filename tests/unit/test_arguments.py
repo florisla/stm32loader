@@ -67,3 +67,12 @@ def test_parse_arguments_unknown_family_raises_systemexit(program, capsys):
 
     _output, error_output = capsys.readouterr()
     assert "invalid family 'XX'" in error_output
+
+
+def test_help_shows_port_as_required(program, capsys):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["--help"])
+
+    output, _error_output = capsys.readouterr()
+    assert " -p PORT " in output
+    assert "[-p PORT]" not in output

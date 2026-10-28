@@ -26,7 +26,8 @@ class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefau
             action.default = argparse.SUPPRESS
         return super()._get_help_string(action)
 
-    def _format_actions_usage(self, actions, groups):
+    @staticmethod
+    def _require_port(actions):
         # Always treat -p/--port as required. See the note about the
         # argparse hack in Stm32Loader.parse_arguments for why.
         def tweak_action(action):
@@ -35,7 +36,15 @@ class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefau
                 action.required = True
             return action
 
-        return super()._format_actions_usage(map(tweak_action, actions), groups)  # pylint: disable=no-member
+        return [tweak_action(action) for action in actions]
+
+    # Python < 3.13 builds the usage line here.
+    def _format_actions_usage(self, actions, groups):
+        return super()._format_actions_usage(self._require_port(actions), groups)  # pylint: disable=no-member
+
+    # Python >= 3.13 builds the usage line here.
+    def _get_actions_usage_parts(self, actions, groups):
+        return super()._get_actions_usage_parts(self._require_port(actions), groups)  # pylint: disable=no-member
 
 
 def _auto_int(x):
