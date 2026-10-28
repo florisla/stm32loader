@@ -46,11 +46,13 @@ def test_parse_arguments_erase_without_port_complains_about_missing_argument(pro
 
 
 def test_parse_arguments_write_unprotect(program):
-    program.parse_arguments(["--write-unprotect"])
+    program.parse_arguments(["-p", "port", "--write-unprotect"])
+    assert program.configuration.write_unprotect
 
 
 def test_parse_arguments_write_protect(program):
-    program.parse_arguments(["--write-protect"])
+    program.parse_arguments(["-p", "port", "--write-protect"])
+    assert program.configuration.write_protect
 
 
 @pytest.mark.parametrize("family", ["f3", "F3"])
