@@ -21,8 +21,6 @@ KNOWN_RAM_EXCEPTIONS = [
     # Most of these belong to the 'known duplicate' category,
     # they share the same product ID (with differing bootloader ID).
     # The others received a comment in the device table.
-    0x442,
-    0x448,
     0x432,
     0x413,
     0x456,

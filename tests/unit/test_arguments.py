@@ -46,8 +46,33 @@ def test_parse_arguments_erase_without_port_complains_about_missing_argument(pro
 
 
 def test_parse_arguments_write_unprotect(program):
-    program.parse_arguments(["--write-unprotect"])
+    program.parse_arguments(["-p", "port", "--write-unprotect"])
+    assert program.configuration.write_unprotect
 
 
 def test_parse_arguments_write_protect(program):
-    program.parse_arguments(["--write-protect"])
+    program.parse_arguments(["-p", "port", "--write-protect"])
+    assert program.configuration.write_protect
+
+
+@pytest.mark.parametrize("family", ["f3", "F3"])
+def test_parse_arguments_family_is_case_insensitive(program, family):
+    program.parse_arguments(["-p", "port", "-f", family])
+    assert program.configuration.family == "F3"
+
+
+def test_parse_arguments_unknown_family_raises_systemexit(program, capsys):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["-p", "port", "-f", "XX"])
+
+    _output, error_output = capsys.readouterr()
+    assert "invalid family 'XX'" in error_output
+
+
+def test_help_shows_port_as_required(program, capsys):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["--help"])
+
+    output, _error_output = capsys.readouterr()
+    assert " -p PORT " in output
+    assert "[-p PORT]" not in output

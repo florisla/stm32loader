@@ -96,11 +96,15 @@ class FakeConnection:
                     self.next_return.extend(self.READ_RESPONSES[(address, length)])
             elif command_value == self.Command.EXTENDED_ERASE.value:
                 pages_bytes = yield
-                pages = struct.unpack(">H", pages_bytes[0:2])
+                pages = struct.unpack(">H", pages_bytes[0:2])[0]
                 if pages == 0xFFFF:
                     # Erase all.
-                    self.flash_memory[:] = 0xFF
-                    self.next_return.append(self.ACK)
+                    self.flash_memory[:] = b"\xff" * len(self.flash_memory)
+                else:
+                    # Page erase is not emulated; consume page numbers, CRC.
+                    _page_numbers_bytes = yield
+                    _crc = yield
+                self.ack()
             elif command_value == self.Command.WRITE_MEMORY.value:
                 address_bytes = yield
                 address = struct.unpack(">I", address_bytes[0:4])[0]

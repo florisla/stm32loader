@@ -70,15 +70,15 @@ def test_unexisting_serial_port_prints_readable_error(capsys):
     assert "Is the device connected and powered correctly?" in captured.err
 
 
-def test_env_var_stm32loader_serial_port_defines_port(capsys):
-    os.environ["STM32LOADER_SERIAL_PORT"] = "COM109"
+def test_env_var_stm32loader_serial_port_defines_port(capsys, monkeypatch):
+    monkeypatch.setenv("STM32LOADER_SERIAL_PORT", "COM109")
     main(avoid_system_exit=True)
     captured = capsys.readouterr()
     assert "port 'COM109'" in captured.err or "port COM109" in captured.err
 
 
-def test_argument_port_overrules_env_var_for_serial_port(capsys):
-    os.environ["STM32LOADER_SERIAL_PORT"] = "COM120"
+def test_argument_port_overrules_env_var_for_serial_port(capsys, monkeypatch):
+    monkeypatch.setenv("STM32LOADER_SERIAL_PORT", "COM120")
     main("--port", "COM121", avoid_system_exit=True)
     captured = capsys.readouterr()
     assert "port 'COM121'" in captured.err or "port COM121" in captured.err

@@ -7,8 +7,11 @@ import os
 import sys
 
 from stm32loader import __version__
+from stm32loader.device_family import DeviceFamily
 
 DEFAULT_VERBOSITY = 5
+
+FAMILY_NAMES = [family.value for family in DeviceFamily]
 
 
 class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
@@ -23,7 +26,8 @@ class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefau
             action.default = argparse.SUPPRESS
         return super()._get_help_string(action)
 
-    def _format_actions_usage(self, actions, groups):
+    @staticmethod
+    def _require_port(actions):
         # Always treat -p/--port as required. See the note about the
         # argparse hack in Stm32Loader.parse_arguments for why.
         def tweak_action(action):
@@ -32,13 +36,31 @@ class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefau
                 action.required = True
             return action
 
-        return super()._format_actions_usage(map(tweak_action, actions), groups)  # pylint: disable=no-member
+        return [tweak_action(action) for action in actions]
+
+    # Python < 3.13 builds the usage line here.
+    def _format_actions_usage(self, actions, groups):
+        return super()._format_actions_usage(self._require_port(actions), groups)  # pylint: disable=no-member
+
+    # Python >= 3.13 builds the usage line here.
+    def _get_actions_usage_parts(self, actions, groups):
+        return super()._get_actions_usage_parts(self._require_port(actions), groups)  # pylint: disable=no-member
 
 
 def _auto_int(x):
     """Convert to int with automatic base detection."""
     # This supports 0x10 == 16 and 10 == 10
     return int(x, 0)
+
+
+def _family(value):
+    """Normalize and validate a device family name."""
+    family = value.upper()
+    if family not in FAMILY_NAMES:
+        raise argparse.ArgumentTypeError(
+            f"invalid family '{value}'; choose from {', '.join(FAMILY_NAMES)}"
+        )
+    return family
 
 
 def parse_arguments(arguments):
@@ -147,11 +169,12 @@ def parse_arguments(arguments):
         "-f",
         "--family",
         action="store",
-        type=str,
+        type=_family,
         default=default_family,
         help=(
             "Device family to read out device UID and flash size; "
-            "e.g F1 for STM32F1xx. Possible values: F0, F1, F3, F4, F7, H7, L4, L0, G0, G4, NRG."
+            "e.g F1 for STM32F1xx. Possible values: "
+            + ", ".join(FAMILY_NAMES)
             + ("." if default_family else " (default: $STM32LOADER_FAMILY).")
         ),
     )

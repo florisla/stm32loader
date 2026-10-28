@@ -162,22 +162,6 @@ def test_erase_memory_with_page_count_higher_than_255_raises_page_index_error(bo
         bootloader.erase_memory([1] * 256)
 
 
-def test_erase_memory_family_l0_without_pages_erases_individual_pages(connection, write):
-    pytest.skip("Port to device-table")
-    bootloader = Stm32Bootloader(connection, device_family="L0")
-    bootloader.command = MagicMock()
-    bootloader._get_flash_size_and_uid_bulk = MagicMock()
-    bootloader._get_flash_size_and_uid_bulk.return_value = (16, 0x01)
-    bootloader.erase_memory()
-
-    # Page count - 1.
-    assert write.written_data[0] == 127
-    # Pages.
-    assert write.written_data[1:3] == b"\x00\x01"
-    # Length: command + byte count + page-addresses + CRC
-    assert len(write.written_data) == 130
-
-
 def test_extended_erase_memory_without_pages_sends_global_mass_erase(bootloader, write):
     bootloader.extended_erase_memory()
     assert write.data_was_written(b"\xff\xff\x00")
@@ -348,32 +332,6 @@ def test_get_uid_for_family_without_uid_returns_uid_not_supported(connection):
 
 
 @pytest.mark.parametrize(
-    "family",
-    ["F4", "L0"],
-)
-def test_get_flash_size_and_uid_for_exception_families_returns_size_and_uid(connection, family):
-    pytest.skip(reason="Ditch 'family")
-
-    bootloader = Stm32Bootloader(connection, device_family=family)
-    bootloader.read_memory = MagicMock()
-
-    memory_block = bytearray([0] * 256)
-
-    # Set up the 'UID' value (12 bytes)
-    # and flash_size value (2 bytes).
-    uid_address = bootloader.UID_ADDRESS[family] & 0xFF
-    memory_block[uid_address : uid_address + 12] = (
-        b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c"
-    )
-    flash_size_address = bootloader.FLASH_SIZE_ADDRESS[family] & 0xFF
-    memory_block[flash_size_address : flash_size_address + 2] = b"\x01\x02"
-    bootloader.read_memory.return_value = memory_block
-
-    assert bootloader.get_flash_size() == 0x0201
-    assert bootloader.get_uid() == b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c"
-
-
-@pytest.mark.parametrize(
     "uid_string",
     [
         (Stm32Bootloader.UID_NOT_SUPPORTED, "UID not supported in this part"),
@@ -415,91 +373,21 @@ def test_get_pages_from_large_range_returns_multiple_pages(bootloader):
 
 
 def test_get_flash_size_for_standard_family(connection):
-    bootloader = Stm32Bootloader(connection, device_family="F1")
-    bootloader.get_flash_size = MagicMock(return_value=128)
+    device = DEVICES.get((0x412, None))
+    bootloader = Stm32Bootloader(connection, device=device)
+    bootloader.read_memory = MagicMock(return_value=b"\x80\x00")
 
     assert bootloader.get_flash_size() == 128
-    bootloader.get_flash_size.assert_called_once()
+    bootloader.read_memory.assert_called_once_with(0x_1FFF_F7E0, 2)
 
 
 def test_get_uid_for_standard_family(connection):
-    bootloader = Stm32Bootloader(connection, device_family="F1")
-    bootloader.get_uid = MagicMock(return_value=b"some uid")
+    device = DEVICES.get((0x412, None))
+    bootloader = Stm32Bootloader(connection, device=device)
+    bootloader.read_memory = MagicMock(return_value=b"some uid 12b")
 
-    assert bootloader.get_uid() == b"some uid"
-    bootloader.get_uid.assert_called_once()
-
-
-def test_get_flash_size_for_exception_family_uses_bulk_read(connection):
-    pytest.skip("Port to device-table")
-    bootloader = Stm32Bootloader(connection, device_family="F4")
-    bootloader._get_flash_size_and_uid_bulk = MagicMock(return_value=(512, b"bulk uid"))
-
-    assert bootloader.get_flash_size() == 512
-    bootloader._get_flash_size_and_uid_bulk.assert_called_once()
-
-
-def test_get_uid_for_exception_family_uses_bulk_read(connection):
-    pytest.skip(reason="Ditch 'family")
-    bootloader = Stm32Bootloader(connection, device_family="L0")
-    bootloader._get_flash_size_and_uid_bulk = MagicMock(return_value=(64, b"bulk uid"))
-
-    assert bootloader.get_uid() == b"bulk uid"
-    bootloader._get_flash_size_and_uid_bulk.assert_called_once()
-
-
-def test_get_flash_size_for_standard_family_uses_direct_read(connection):
-    pytest.skip(reason="Ditch 'family")
-    bootloader = Stm32Bootloader(connection, device_family="F1")
-    bootloader.read_memory = MagicMock(return_value=b"\x80\x00")  # 128 KiB
-
-    assert bootloader.get_flash_size() == 128
-    bootloader.read_memory.assert_called_once()
-
-
-def test_flash_size_and_uid_are_cached(connection):
-    pytest.skip(reason="Ditch 'family")
-    bootloader = Stm32Bootloader(connection, device_family="F1")
-    bootloader.read_memory = MagicMock()
-    bootloader.read_memory.side_effect = [b"\x80\x00", b"some uid 12b"]
-
-    # First calls should trigger hardware reads via read_memory.
-    assert bootloader.get_flash_size() == 128
     assert bootloader.get_uid() == b"some uid 12b"
-
-    assert bootloader.read_memory.call_count == 2
-
-    # Second calls should use cache, so read_memory should NOT be called again
-    assert bootloader.get_flash_size() == 128
-    assert bootloader.get_uid() == b"some uid 12b"
-
-    # read_memory should have been called exactly once for each (once for
-    # size, once for UID).
-    assert bootloader.read_memory.call_count == 2
-
-
-def test_get_flash_size_and_uid_bulk_populates_both_caches(connection):
-    pytest.skip(reason="Ditch 'family")
-    bootloader = Stm32Bootloader(connection, device_family="F4")
-    # Mock the internal bulk read method via read_memory.
-    bootloader.read_memory = MagicMock()
-    memory_block = bytearray([0] * 256)
-    uid_offset = bootloader.UID_ADDRESS["F4"] & 0xFF
-    flash_size_offset = bootloader.FLASH_SIZE_ADDRESS["F4"] & 0xFF
-    memory_block[uid_offset : uid_offset + 12] = b"bulk uid 12b"
-    memory_block[flash_size_offset : flash_size_offset + 2] = b"\x00\x02"  # 512
-    bootloader.read_memory.return_value = memory_block
-
-    assert bootloader.get_flash_size() == 512
-    assert bootloader.get_uid() == b"bulk uid 12b"
-    bootloader.read_memory.assert_called_once()
-
-    # Subsequent calls to individual methods should use cache.
-    assert bootloader.get_flash_size() == 512
-    assert bootloader.get_uid() == b"bulk uid 12b"
-
-    # read_memory should still have been called only once.
-    bootloader.read_memory.assert_called_once()
+    bootloader.read_memory.assert_called_once_with(0x_1FFF_F7E8, 12)
 
 
 @pytest.mark.parametrize(

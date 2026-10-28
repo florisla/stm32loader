@@ -19,6 +19,7 @@ from stm32loader.uart import SerialConnection
 
 SERIAL_PORT = "COM7"
 BAUD_RATE = 9600
+DEVICE_FAMILY = "F1"
 
 # pylint: disable=missing-docstring, redefined-outer-name
 
@@ -32,7 +33,7 @@ def serial_connection():
 
 @pytest.fixture
 def stm32(serial_connection):
-    stm32 = Stm32Bootloader(serial_connection)
+    stm32 = Stm32Bootloader(serial_connection, device_family=DEVICE_FAMILY)
     return stm32
 
 
