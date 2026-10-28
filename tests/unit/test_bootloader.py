@@ -500,3 +500,36 @@ def test_get_flash_size_and_uid_bulk_populates_both_caches(connection):
 
     # read_memory should still have been called only once.
     bootloader.read_memory.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "optr, page_size",
+    [
+        (0xFFEFF8AA, 2048),  # DBANK set: dual bank
+        (0xFFAFF8AA, 4096),  # DBANK clear: single bank
+    ],
+)
+def test_update_flash_bank_mode_sets_g47x_page_size_from_dbank(connection, optr, page_size):
+    device = DEVICES.get((0x469, 0xD5))
+    bootloader = Stm32Bootloader(connection, device=device)
+    bootloader.read_memory = MagicMock(return_value=bytearray(optr.to_bytes(4, "little")))
+    bootloader.update_flash_bank_mode()
+    bootloader.read_memory.assert_called_once_with(0x1FFF7800, 4)
+    assert bootloader.flash_page_size == page_size
+
+
+def test_update_flash_bank_mode_keeps_page_size_when_option_read_fails(connection):
+    device = DEVICES.get((0x469, 0xD5))
+    bootloader = Stm32Bootloader(connection, device=device)
+    bootloader.read_memory = MagicMock(side_effect=Stm32.CommandError("NACK"))
+    bootloader.update_flash_bank_mode()
+    assert bootloader.flash_page_size == 2048
+
+
+def test_update_flash_bank_mode_ignores_g4_without_dual_bank(connection):
+    device = DEVICES.get((0x468, 0xD4))
+    bootloader = Stm32Bootloader(connection, device=device)
+    bootloader.read_memory = MagicMock()
+    bootloader.update_flash_bank_mode()
+    bootloader.read_memory.assert_not_called()
+    assert bootloader.flash_page_size == 2048

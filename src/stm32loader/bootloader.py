@@ -374,7 +374,9 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         # ST BlueNRG-2 data sheet: 128 pages of 8 * 64 * 4 bytes
         "NRG": 2048,
         # ST RM0440 section 3.3.1 Flash memory organization
-        "G4": 2048,  # this is valid only for dual bank mode
+        "G4": 2048,
+        # G47x/G48x in single bank mode, see update_flash_bank_mode()
+        "G4sp": 4096,
         # ST RM0433 section 4.2 FLASH main features
         "H7": 128 * 1024,
         # GD32VW55x series
@@ -382,6 +384,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
     }
 
     device: DeviceInfo | None
+
+    # ST RM0440 FLASH_OPTR: DBANK bit, only on G47x/G48x (category 3)
+    G4_DUAL_BANK_PRODUCT_ID = 0x469
+    G4_DBANK_BIT = 22
 
     SYNCHRONIZE_ATTEMPTS = 2
     SYNCHRONIZE_TIMEOUT = 0.5
@@ -411,6 +417,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         self.show_progress = show_progress or ShowProgress(None)
         self.extended_erase = False
         self.supported_commands = {}
+        self.flash_page_size = None
 
         # Try to use given device or device family.
         if device:
@@ -683,6 +690,32 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
                     1, f"Device family is already set to {self.device_family}. Not updating."
                 )
             self.update_transfer_info()
+            self.update_flash_bank_mode()
+
+    def update_flash_bank_mode(self):
+        """Update flash page size from the G4 bank mode, if applicable."""
+        if self.device_family != "G4" or self.device.product_id != self.G4_DUAL_BANK_PRODUCT_ID:
+            return
+
+        try:
+            optr_bytes = self.read_memory(self.device.option_bytes[0], 4)
+        except CommandError:
+            self.debug(
+                0,
+                "Could not read option bytes to detect flash bank mode; "
+                f"assuming page size {self.flash_page_size} bytes.",
+            )
+            return
+
+        optr = struct.unpack("<I", bytes(optr_bytes))[0]
+        dual_bank = bool(optr & (1 << self.G4_DBANK_BIT))
+        if not dual_bank:
+            self.flash_page_size = self.FLASH_PAGE_SIZE["G4sp"]
+        self.debug(
+            5,
+            f"Flash bank mode: {'dual' if dual_bank else 'single'} bank,"
+            f" page size {self.flash_page_size} bytes",
+        )
 
     def get_bootloader_id(self):
         """Get the bootloader ID by reading the 'bootloader ID' register."""
