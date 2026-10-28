@@ -51,7 +51,11 @@ sys.stdout.close()
 sys.stdout = sys.__stdout__
 ]]] -->
 ```
-usage: stm32loader [-h] [-e] [-u] [-x] [-w] [-v] [-r] [-l LENGTH] -p PORT [-b BAUD] [-a ADDRESS] [-g ADDRESS] [-f FAMILY] [-V] [-q] [-s] [-R] [-B] [-n] [-P {even,none}] [--version] [FILE.BIN]
+usage: stm32loader [-h] [-e] [-u] [-x] [--write-unprotect] [--write-protect]
+                   [-w] [-v] [-r] [-l LENGTH] -p PORT [-b BAUD] [-a ADDRESS]
+                   [-g ADDRESS] [-f FAMILY] [-V] [-q] [-s] [-R] [-B] [-n]
+                   [-P {even,none}] [--version]
+                   [FILE.BIN]
 
 Flash firmware to STM32 microcontrollers.
 
@@ -60,9 +64,13 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -e, --erase           Erase the full flash memory or a specific region (support --address and --length). Note: this is required on previously written memory.
+  -e, --erase           Erase the full flash memory or a specific region
+                        (support --address and --length). Note: this is
+                        required on previously written memory.
   -u, --unprotect       Unprotect flash from readout.
   -x, --protect         Protect flash against readout.
+  --write-unprotect     Disable write protection before flashing
+  --write-protect       Enable write protection after flashing
   -w, --write           Write file content to flash.
   -v, --verify          Verify flash content versus local file (recommended).
   -r, --read            Read from flash and store in local file.
@@ -70,10 +78,15 @@ options:
   -p, --port PORT       Serial port (default: $STM32LOADER_SERIAL_PORT).
   -b, --baud BAUD       Baudrate. (default: 115200)
   -a, --address ADDRESS
-                        Target address for read or write. For erase, this is used when you supply --length. (default: 134217728)
+                        Target address for read or write. For erase, this is
+                        used when you supply --length. (default: 134217728)
   -g, --go-address ADDRESS
                         Start executing from address (0x08000000, usually).
-  -f, --family FAMILY   Device family to read out device UID and flash size; e.g F1 for STM32F1xx. Possible values: F0, F1, F3, F4, F7, H7, L4, L0, G0, G4, NRG. (default: $STM32LOADER_FAMILY).
+  -f, --family FAMILY   Device family to read out device UID and flash size;
+                        e.g F1 for STM32F1xx. Possible values: C0, F0, F1, F2,
+                        F3, F4, F7, G0, G4, H5, H7, L0, L1, L4, L5, WBA, WB0,
+                        WB, WL, U5, W, NRG, WIZ, GD32VW55X (default:
+                        $STM32LOADER_FAMILY).
   -V, --verbose         Verbose mode.
   -q, --quiet           Quiet mode.
   -s, --swap-rts-dtr    Swap RTS and DTR: use RTS for reset and DTR for boot0.
@@ -83,7 +96,8 @@ options:
                         Make BOOT0 active low.
   -n, --no-progress     Don't show progress bar.
   -P, --parity {even,none}
-                        Parity: "even" for STM32, "none" for BlueNRG. (default: even)
+                        Parity: "even" for STM32, "none" for BlueNRG.
+                        (default: even)
   --version             show program's version number and exit
 
 examples:
