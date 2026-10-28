@@ -373,19 +373,21 @@ def test_get_pages_from_large_range_returns_multiple_pages(bootloader):
 
 
 def test_get_flash_size_for_standard_family(connection):
-    bootloader = Stm32Bootloader(connection, device_family="F1")
-    bootloader.get_flash_size = MagicMock(return_value=128)
+    device = DEVICES.get((0x412, None))
+    bootloader = Stm32Bootloader(connection, device=device)
+    bootloader.read_memory = MagicMock(return_value=b"\x80\x00")
 
     assert bootloader.get_flash_size() == 128
-    bootloader.get_flash_size.assert_called_once()
+    bootloader.read_memory.assert_called_once_with(0x_1FFF_F7E0, 2)
 
 
 def test_get_uid_for_standard_family(connection):
-    bootloader = Stm32Bootloader(connection, device_family="F1")
-    bootloader.get_uid = MagicMock(return_value=b"some uid")
+    device = DEVICES.get((0x412, None))
+    bootloader = Stm32Bootloader(connection, device=device)
+    bootloader.read_memory = MagicMock(return_value=b"some uid 12b")
 
-    assert bootloader.get_uid() == b"some uid"
-    bootloader.get_uid.assert_called_once()
+    assert bootloader.get_uid() == b"some uid 12b"
+    bootloader.read_memory.assert_called_once_with(0x_1FFF_F7E8, 12)
 
 
 @pytest.mark.parametrize(
