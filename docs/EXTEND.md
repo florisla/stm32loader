@@ -19,8 +19,8 @@ class RaspberrySerialWithGpio(SerialConnection):
     BOOT0_PIN = 2
     RESET_PIN = 3
     
-    def __init__(self, serial_port, baud_rate, parity):
-        super().__init__(serial_port, baude_rate, parity)
+    def __init__(self, serial_port, baud_rate=115200, parity="E"):
+        super().__init__(serial_port, baud_rate, parity)
         
         GPIO.setup(self.BOOT0_PIN, GPIO.OUT, initial=GPIO.LOW)
         GPIO.setup(self.RESET_PIN, GPIO.OUT, initial=GPIO.HIGH)
