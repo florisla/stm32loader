@@ -3,23 +3,21 @@
 What changed in which version.
 
 
-## vnext
-
-### Changed
-* `#91` Drop the `--family` argument; do auto-detect instead.
-* `#90` Move docs to `docs` folder.
-
 ## [0.8.0] - TBD
 
 ### Added
+* Support Python 3.15.
 * `#81` Support STM32G4 family.
 * `#87` Officially support Python 3.12/3.13/3.14, PyPy 3.10/3.11.
 * `#69` Print details about erased pages.
 
 ## Changed
+* `#91` Drop the `--family` argument; do auto-detect instead.
 * `#88` Use uv as build backend.
 * `#88` Use uv in usage examples.
 * `#71` Use `ruff` as formatter.
+* `#90` Move docs to `docs` folder.
+* Upgraded CI.
 
 
 ## [0.7.1] - 2023-10-18
