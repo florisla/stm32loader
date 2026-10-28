@@ -51,3 +51,17 @@ def test_parse_arguments_write_unprotect(program):
 
 def test_parse_arguments_write_protect(program):
     program.parse_arguments(["--write-protect"])
+
+
+@pytest.mark.parametrize("family", ["f3", "F3"])
+def test_parse_arguments_family_is_case_insensitive(program, family):
+    program.parse_arguments(["-p", "port", "-f", family])
+    assert program.configuration.family == "F3"
+
+
+def test_parse_arguments_unknown_family_raises_systemexit(program, capsys):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["-p", "port", "-f", "XX"])
+
+    _output, error_output = capsys.readouterr()
+    assert "invalid family 'XX'" in error_output
