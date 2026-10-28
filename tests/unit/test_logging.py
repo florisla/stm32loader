@@ -4,10 +4,9 @@ import logging
 
 import pytest
 
-from stm32loader import main as stm32loader_main
 from stm32loader.main import _configure_logging
 
-# pylint: disable=missing-docstring, redefined-outer-name, protected-access
+# pylint: disable=missing-docstring, redefined-outer-name
 
 VERBOSE = 10
 DEFAULT = 5
@@ -16,13 +15,8 @@ QUIET = 0
 
 @pytest.fixture
 def logger():
-    yield logging.getLogger("stm32loader.test")
-
-    package_logger = logging.getLogger("stm32loader")
-    for handler in stm32loader_main._console_handlers:
-        package_logger.removeHandler(handler)
-    package_logger.setLevel(logging.NOTSET)
-    package_logger.propagate = True
+    # tests/conftest.py resets the logging setup after each test.
+    return logging.getLogger("stm32loader.test")
 
 
 def test_default_verbosity_sends_info_to_stdout_and_hides_debug(logger, capsys):
