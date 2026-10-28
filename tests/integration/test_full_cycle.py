@@ -45,3 +45,24 @@ def test_write_protect_passes():
     loader.read_device_uid()
     loader.read_flash_size()
     loader.perform_commands()
+
+
+def test_erase_resets_flash_to_0xff():
+    loader = Stm32Loader()
+    loader.configuration = FakeConfiguration(
+        erase=True,
+        write=False,
+        verify=False,
+        write_protect=False,
+        write_unprotect=False,
+        firmware_file=None,
+        family=None,
+    )
+    loader.connection = FakeConnection()
+    loader.connection.flash_memory[:] = b"\x00" * len(loader.connection.flash_memory)
+    loader.stm32 = Stm32Bootloader(loader.connection, device_family="F1", verbosity=5)
+
+    loader.detect_device()
+    loader.perform_commands()
+
+    assert all(byte == 0xFF for byte in loader.connection.flash_memory)
