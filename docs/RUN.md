@@ -39,8 +39,10 @@ Example:
 from stm32loader.main import Stm32Loader
 
 loader = Stm32Loader()
-loader.configuration.port = "/dev/cu.usbserial-A5XK3RJT"
+loader.parse_arguments(["--port", "/dev/cu.usbserial-A5XK3RJT"])
 loader.connect()
-loader.stm32.readout_unprotect()
-loader.disconnect()
+try:
+    loader.stm32.readout_unprotect()
+finally:
+    loader.stm32.connection.disconnect()
 ```
