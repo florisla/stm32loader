@@ -101,7 +101,7 @@ class FakeConnection:
                     # Erase all.
                     self.flash_memory[:] = b"\xff" * len(self.flash_memory)
                 else:
-                    # Page erase is not emulated; consume page numbers and CRC.
+                    # Page erase is not emulated; consume page numbers, CRC.
                     _page_numbers_bytes = yield
                     _crc = yield
                 self.ack()
