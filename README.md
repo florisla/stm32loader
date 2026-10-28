@@ -24,6 +24,10 @@ Compatible with Python version 3.9-3.15 and PyPy 3.10-3.11.
 
     pip install stm32loader
 
+To also support loading `.hex` files:
+
+    pip install stm32loader[hex]
+
 To install the latest development version:
 
     pip install git+https://github.com/florisla/stm32loader.git

@@ -30,6 +30,21 @@ dependencies = [
     "progress",
 ]
 
+[project.optional-dependencies]
+hex = [
+    "intelhex",
+]
+dev = [
+    "intelhex",
+    "pytest",
+    "nox>=2026.2.9",
+    "nox-uv>=0.7.1",
+    "ruff",
+    "pylint",
+    "bump-my-version",
+    "cogapp",
+]
+
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]
 build-backend = "uv_build"
@@ -52,12 +67,6 @@ release = [
     "bump-my-version",
     "cogapp",
 ]
-dev = [
-    { include-group = "test" },
-    { include-group = "hex" },
-    { include-group = "lint" },
-    { include-group = "release" },
-]
 
 [project.scripts]
 stm32loader = "stm32loader.__main__:main"
@@ -66,6 +75,10 @@ stm32loader = "stm32loader.__main__:main"
 Home = "https://github.com/florisla/stm32loader"
 BugTracker = "https://github.com/florisla/stm32loader/issues"
 SourceCode = "https://github.com/florisla/stm32loader"
+
+
+[tool.uv]
+default-groups = ["test", "hex", "lint", "release"]
 
 
 [tool.bumpversion]
