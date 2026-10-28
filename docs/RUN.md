@@ -13,25 +13,19 @@ python3 -m stm32loader
 ```
 
 
-## Execute as a module without installing
+## Run from a repository checkout
 
-You can also run `stm32loader` without installing it.  You do need `pyserial` though.
-
-Make sure you are in the root of the repository, or the repository is in `PYTHONPATH`.
+Install the project in editable mode, then run it as a module.
 
 ```shell
-python3 -m pip install pyserial --user
+python3 -m pip install --editable .
 python3 -m stm32loader
 ```
 
-
-## Execute main.py directly
-
-The file `main.py` also runs the `stm32loader` program when executed.
-Make sure the module can be found; add the folder of the repository to `PYTHONPATH`.
+Alternatively, with `uv`:
 
 ```shell
-PYTHONPATH=. python3 stm32loader/main.py
+uv run stm32loader
 ```
 
 
