@@ -384,6 +384,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
     device: DeviceInfo | None
 
     SYNCHRONIZE_ATTEMPTS = 2
+    SYNCHRONIZE_TIMEOUT = 0.5
 
     def __init__(  # pylint: disable=too-many-positional-arguments,too-many-arguments
         self, connection, device=None, device_family=None, verbosity=5, show_progress=None
@@ -476,15 +477,23 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         # This is likely an artifact/side effect of each command being
         # 2-bytes and having xor of bytes equal to 0xFF.
 
-        for attempt in range(self.SYNCHRONIZE_ATTEMPTS):
-            if attempt:
-                print("Bootloader activation timeout -- retrying")
-            self.write(self.Command.SYNCHRONIZE)
-            read_data = bytearray(self.connection.read())
+        # Use a short timeout: if the bootloader was already synchronized
+        # (e.g. RESET is not under our control), the first 0x7F is taken
+        # as the first byte of a command and gets no reply at all.
+        previous_timeout_value = self.connection.timeout
+        self.connection.timeout = self.SYNCHRONIZE_TIMEOUT
+        try:
+            for attempt in range(self.SYNCHRONIZE_ATTEMPTS):
+                if attempt:
+                    print("Bootloader activation timeout -- retrying")
+                self.write(self.Command.SYNCHRONIZE)
+                read_data = bytearray(self.connection.read())
 
-            if read_data and read_data[0] in (self.Reply.ACK, self.Reply.NACK):
-                # success
-                return
+                if read_data and read_data[0] in (self.Reply.ACK, self.Reply.NACK):
+                    # success
+                    return
+        finally:
+            self.connection.timeout = previous_timeout_value
 
         # not successful
         raise CommandError("Bad reply from bootloader")
