@@ -52,13 +52,14 @@ from raspberrystm32 import RaspberrySerialWithGpio
 
 connection = RaspberrySerialWithGpio("/dev/cu.usbserial-A5XK3RJT")
 connection.connect()
-stm32 = Stm32Bootloader(connection, device_family="F1")
+stm32 = Stm32Bootloader(connection)
 ```
 
 Now you can use all of the Stm32Bootloader methods.
 
 ```python3
 stm32.reset_from_system_memory()
+stm32.detect_device()
 print(stm32.get_version())
 print(stm32.get_id())
 print(stm32.get_flash_size())
