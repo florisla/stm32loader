@@ -1,48 +1,20 @@
 name: Lint
 
 on:
-  - push
-  - pull_request
+    - push
+    - pull_request
 
 defaults:
     run:
         shell: bash
 
 jobs:
-    ruff:
-        strategy:
-            matrix:
-                os:
-                    - ubuntu-latest
-                python-version:
-                    - "3.14"
-        runs-on: ${{ matrix.os }}
+    lint:
+        runs-on: ubuntu-latest
         steps:
-          - uses: actions/checkout@v4
-          - uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-          - name: Install ruff
-            run: pip install ruff
-          - name: Run ruff format check
-            run: ruff format --check src/stm32loader
-          - name: Run ruff lint check
-            run: ruff check src/stm32loader
-    pylint:
-        strategy:
-            fail-fast: true
-            matrix:
-                os:
-                    - ubuntu-latest
-                python-version:
-                    - "3.14"
-        runs-on: ${{ matrix.os }}
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-python@v5
-              with:
-                  python-version: ${{ matrix.python-version }}
-            - name: Install lint dependencies
-              run: pip install pylint pyserial intelhex
-            - name: Run pylint
-              run: pylint src/stm32loader
+            - uses: actions/checkout@v5
+            - uses: astral-sh/setup-uv@v7
+            - name: Resolve latest dependency versions (uv.lock is not committed)
+              run: uv lock
+            - name: Run ruff and pylint as defined in noxfile.py
+              run: uv run nox --session lint

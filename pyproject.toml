@@ -46,7 +46,6 @@ test = [
     "intelhex",
     "nox>=2026.2.9",
     "nox-uv>=0.7.1",
-    "tox>=4.30.3",
 ]
 release = [
     "bump-my-version",
@@ -126,7 +125,7 @@ docstring-code-format = true
 
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers -m 'not (hardware or hardware_missing)'"
+addopts = "--strict-markers -m 'not (hardware or missing_hardware)'"
 markers = [
     "hardware",
     "missing_hardware",
