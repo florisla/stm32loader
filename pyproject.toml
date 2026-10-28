@@ -8,9 +8,9 @@ authors = [
     {name = "Floris Lambrechts", email = "florisla@gmail.com"},
 ]
 requires-python = ">=3.9"
-license = {file = "LICENSE"}
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 classifiers = [
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
