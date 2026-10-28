@@ -52,9 +52,9 @@ sys.stdout = sys.__stdout__
 ]]] -->
 ```
 usage: stm32loader [-h] [-e] [-u] [-x] [--write-unprotect] [--write-protect]
-                   [-w] [-v] [-r] [-l LENGTH] -p PORT [-b BAUD] [-a ADDRESS]
-                   [-g ADDRESS] [-f FAMILY] [-V] [-q] [-s] [-R] [-B] [-n]
-                   [-P {even,none}] [--version]
+                   [-w] [-v] [-r] [-l LENGTH] -p PORT [-b BAUD] [-a ADDRESS |
+                   -o OFFSET] [-g ADDRESS] [-f FAMILY] [-V] [-q] [-s] [-R]
+                   [-B] [-n] [-P {even,none}] [--version]
                    [FILE.BIN]
 
 Flash firmware to STM32 microcontrollers.
@@ -74,12 +74,16 @@ options:
   -w, --write           Write file content to flash.
   -v, --verify          Verify flash content versus local file (recommended).
   -r, --read            Read from flash and store in local file.
-  -l, --length LENGTH   Length of read or erase.
+  -l, --length LENGTH   Length of read or erase. For write and verify, use
+                        only this many bytes of the file.
   -p, --port PORT       Serial port (default: $STM32LOADER_SERIAL_PORT).
   -b, --baud BAUD       Baudrate. (default: 115200)
   -a, --address ADDRESS
                         Target address for read or write. For erase, this is
-                        used when you supply --length. (default: 134217728)
+                        used when you supply --length. Default: the start of
+                        flash memory.
+  -o, --offset OFFSET   Alternative to --address: an offset from the start of
+                        flash memory.
   -g, --go-address ADDRESS
                         Start executing from address (0x08000000, usually).
   -f, --family FAMILY   Device family to read out device UID and flash size;

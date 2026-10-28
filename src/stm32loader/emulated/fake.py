@@ -168,5 +168,6 @@ class FakeConfiguration:
         self.length = None
         self.verbosity = 5
         self.address = 0x_0800_0000
+        self.offset = None
         self.go_address = None
         self.family = family

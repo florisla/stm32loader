@@ -10,18 +10,24 @@ What changed in which version.
 * `#81` Support STM32G4 family.
 * `#87` Officially support Python 3.12/3.13/3.14, PyPy 3.10/3.11.
 * `#69` Print details about erased pages.
+* Add `-o/--offset` as an alternative to `--address`: offset from the start of flash.
+* Support `--length` with `--write` and `--verify`: use only that many bytes of the file.
+* Support partial erase on devices with mixed sector sizes (F2, F4, F7).
 
 ## Changed
 * `#91` Drop the `--family` argument; do auto-detect instead.
+* Produce output through logging (info to stdout, warning/error to stderr).
+* Deprecate `Stm32Bootloader` 'verbosity' argument.
+* Treat --erase --address as a global address like --write and --read.
+* `Stm32Bootloader.erase_memory()` raises `PageIndexError` for an empty page list
+  instead of doing a global erase.
+
+## Changed (infrastructure)
+* Upgraded CI.
 * `#88` Use uv as build backend.
 * `#88` Use uv in usage examples.
 * `#71` Use `ruff` as formatter.
 * `#90` Move docs to `docs` folder.
-* Upgraded CI.
-* Use the `logging` module. Informational output goes to stdout, warnings and errors
-  to stderr; `--quiet` now silences all informational output.
-* Deprecate the `verbosity` argument of `Stm32Bootloader`; configure the
-  `stm32loader` logger instead.
 
 
 ## [0.7.1] - 2023-10-18

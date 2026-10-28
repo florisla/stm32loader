@@ -120,6 +120,20 @@ class Stm32Loader:
                 binary_data = hexfile.load_hex(data_file_path)
             else:
                 binary_data = data_file_path.read_bytes()
+            binary_data = self._apply_length(binary_data, data_file_path.name)
+
+        # Check the target range before touching the device.
+        address = self._target_address()
+        erase_pages = None
+        if self.configuration.erase and self.configuration.length is not None:
+            try:
+                erase_pages = self.stm32.pages_from_range(
+                    address, address + self.configuration.length
+                )
+            except bootloader.PageIndexError as e:
+                logger.error("%s", e)
+                sys.exit(1)
+
         if self.configuration.unprotect:
             try:
                 self.stm32.readout_unprotect()
@@ -145,22 +159,19 @@ class Stm32Loader:
 
         if self.configuration.erase:
             try:
-                if self.configuration.length is None:
+                if erase_pages is None:
                     # Erase full device.
                     logger.info("Performing full erase...")
                     self.stm32.erase_memory(pages=None)
                 else:
                     # Erase from address to address + length.
-                    start_address = self.configuration.address
-                    end_address = self.configuration.address + self.configuration.length
-                    pages = self.stm32.pages_from_range(start_address, end_address)
                     logger.info(
                         "Performing partial erase (0x%X - 0x%X, %d pages)... ",
-                        start_address,
-                        end_address,
-                        len(pages),
+                        address,
+                        address + self.configuration.length,
+                        len(erase_pages),
                     )
-                    self.stm32.erase_memory(pages)
+                    self.stm32.erase_memory(erase_pages)
 
             except bootloader.CommandError:
                 # may be caused by readout protection
@@ -171,7 +182,7 @@ class Stm32Loader:
                 self.stm32.reset_from_flash()
                 sys.exit(1)
         if self.configuration.write:
-            self.stm32.write_memory_data(self.configuration.address, binary_data)
+            self.stm32.write_memory_data(address, binary_data)
 
         if self.configuration.write_protect:
             try:
@@ -182,7 +193,7 @@ class Stm32Loader:
                 sys.exit(1)
 
         if self.configuration.verify:
-            read_data = self.stm32.read_memory_data(self.configuration.address, len(binary_data))
+            read_data = self.stm32.read_memory_data(address, len(binary_data))
             try:
                 bootloader.Stm32Bootloader.verify_data(read_data, binary_data)
                 logger.info("Verification OK")
@@ -190,13 +201,81 @@ class Stm32Loader:
                 logger.error("Verification FAILED: %s", e)
                 sys.exit(1)
         if not self.configuration.write and self.configuration.read:
-            read_data = self.stm32.read_memory_data(
-                self.configuration.address, self.configuration.length
-            )
+            read_data = self.stm32.read_memory_data(address, self.configuration.length)
             with open(self.configuration.data_file, "wb") as out_file:
                 out_file.write(read_data)
         if self.configuration.go_address is not None:
             self.stm32.go(self.configuration.go_address)
+
+    def _apply_length(self, data, file_name):
+        """Truncate the file data to --length, warning when sizes differ."""
+        length = self.configuration.length
+        if length is None or length == len(data):
+            return data
+
+        if length < len(data):
+            logger.warning(
+                "--length %d is smaller than %s (%d bytes); using only the first %d bytes.",
+                length,
+                file_name,
+                len(data),
+                length,
+            )
+            return data[:length]
+
+        logger.warning(
+            "--length %d is larger than %s (%d bytes); using all %d bytes.",
+            length,
+            file_name,
+            len(data),
+            len(data),
+        )
+        return data
+
+    def _target_address(self):
+        """
+        Return the global address for read, write, verify and erase.
+
+        Resolve --offset against the flash start. Abort when --address
+        looks like an offset, i.e. lies below the flash start.
+        """
+        flash_start = self.stm32.flash_start
+        base = flash_start
+        if base is None:
+            base = bootloader.Stm32Bootloader.FLASH_START_DEFAULT
+
+        offset = self.configuration.offset
+        if offset is not None:
+            flash = self.stm32.device.flash if self.stm32.device else None
+            if flash is not None and flash.size is not None and offset >= flash.size:
+                logger.error(
+                    "Offset 0x%X is beyond the end of flash memory (size 0x%X).",
+                    offset,
+                    flash.size,
+                )
+                sys.exit(1)
+            return base + offset
+
+        address = self.configuration.address
+        if address is None:
+            return base
+
+        uses_address = (
+            self.configuration.write
+            or self.configuration.verify
+            or self.configuration.read
+            or (self.configuration.erase and self.configuration.length is not None)
+        )
+        if uses_address and flash_start is not None and address < flash_start:
+            logger.error(
+                "Address 0x%08X is below the flash start 0x%08X; "
+                "use --offset 0x%X for an offset inside flash memory.",
+                address,
+                flash_start,
+                address,
+            )
+            sys.exit(1)
+        return address
 
     def reset(self):
         """Reset the microcontroller."""

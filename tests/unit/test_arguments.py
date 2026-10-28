@@ -76,3 +76,45 @@ def test_help_shows_port_as_required(program, capsys):
     output, _error_output = capsys.readouterr()
     assert " -p PORT " in output
     assert "[-p PORT]" not in output
+
+
+def test_parse_arguments_address_and_offset_are_mutually_exclusive(program, capsys):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["-p", "port", "-a", "0x08000000", "-o", "0x400"])
+
+    _output, error_output = capsys.readouterr()
+    assert "not allowed with argument" in error_output
+
+
+def test_parse_arguments_offset_without_address(program):
+    program.parse_arguments(["-p", "port", "-o", "0x400"])
+    assert program.configuration.offset == 0x400
+    assert program.configuration.address is None
+
+
+def test_parse_arguments_negative_offset_raises_systemexit(program):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["-p", "port", "-o", "-1"])
+
+
+@pytest.mark.parametrize("length", ["0", "-16"])
+def test_parse_arguments_non_positive_length_raises_systemexit(program, length, capsys):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["-p", "port", "-l", length])
+
+    _output, error_output = capsys.readouterr()
+    assert "must be a positive number" in error_output
+
+
+@pytest.mark.parametrize("location", [["-a", "0x08000000"], ["-o", "0"]])
+def test_parse_arguments_read_accepts_address_or_offset(program, location):
+    program.parse_arguments(["-p", "port", "-r", "-l", "16", *location, "out.bin"])
+    assert program.configuration.read
+
+
+def test_parse_arguments_read_without_address_or_offset_raises_systemexit(program, capsys):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["-p", "port", "-r", "-l", "16", "out.bin"])
+
+    _output, error_output = capsys.readouterr()
+    assert "one of the arguments -a/--address -o/--offset is required" in error_output

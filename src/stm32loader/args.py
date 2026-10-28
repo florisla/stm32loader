@@ -30,10 +30,13 @@ class HelpFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefau
     def _require_port(actions):
         # Always treat -p/--port as required. See the note about the
         # argparse hack in Stm32Loader.parse_arguments for why.
+        # Only copy the port action: argparse recognizes the members of
+        # mutually exclusive groups by identity.
         def tweak_action(action):
+            if action.dest != "port":
+                return action
             action = copy.copy(action)
-            if action.dest == "port":
-                action.required = True
+            action.required = True
             return action
 
         return [tweak_action(action) for action in actions]
@@ -51,6 +54,22 @@ def _auto_int(x):
     """Convert to int with automatic base detection."""
     # This supports 0x10 == 16 and 10 == 10
     return int(x, 0)
+
+
+def _auto_positive_int(x):
+    """Convert to a positive int with automatic base detection."""
+    value = _auto_int(x)
+    if value <= 0:
+        raise argparse.ArgumentTypeError(f"must be a positive number: '{x}'")
+    return value
+
+
+def _auto_non_negative_int(x):
+    """Convert to a non-negative int with automatic base detection."""
+    value = _auto_int(x)
+    if value < 0:
+        raise argparse.ArgumentTypeError(f"must not be negative: '{x}'")
+    return value
 
 
 def _family(value):
@@ -127,7 +146,13 @@ def parse_arguments(arguments):
     )
 
     length_arg = parser.add_argument(
-        "-l", "--length", action="store", type=_auto_int, help="Length of read or erase."
+        "-l",
+        "--length",
+        action="store",
+        type=_auto_positive_int,
+        help=(
+            "Length of read or erase. For write and verify, use only this many bytes of the file."
+        ),
     )
 
     default_port = os.environ.get("STM32LOADER_SERIAL_PORT")
@@ -144,15 +169,23 @@ def parse_arguments(arguments):
         "-b", "--baud", action="store", type=int, default=115200, help="Baudrate."
     )
 
-    address_arg = parser.add_argument(
+    location_group = parser.add_mutually_exclusive_group()
+    location_group.add_argument(
         "-a",
         "--address",
         action="store",
         type=_auto_int,
-        default=0x08000000,
         help=(
             "Target address for read or write. For erase, this is used when you supply --length."
+            " Default: the start of flash memory."
         ),
+    )
+    location_group.add_argument(
+        "-o",
+        "--offset",
+        action="store",
+        type=_auto_non_negative_int,
+        help="Alternative to --address: an offset from the start of flash memory.",
     )
 
     parser.add_argument(
@@ -255,7 +288,7 @@ def parse_arguments(arguments):
 
     if configuration.read:
         length_arg.required = True
-        address_arg.required = True
+        location_group.required = True
 
     parser.parse_args(arguments)
 
