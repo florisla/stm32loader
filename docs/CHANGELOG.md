@@ -18,6 +18,10 @@ What changed in which version.
 * `#71` Use `ruff` as formatter.
 * `#90` Move docs to `docs` folder.
 * Upgraded CI.
+* Use the `logging` module. Informational output goes to stdout, warnings and errors
+  to stderr; `--quiet` now silences all informational output.
+* Deprecate the `verbosity` argument of `Stm32Bootloader`; configure the
+  `stm32loader` logger instead.
 
 
 ## [0.7.1] - 2023-10-18

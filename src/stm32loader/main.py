@@ -20,6 +20,7 @@
 
 """Flash firmware to STM32 microcontrollers over a serial connection."""
 
+import logging
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -35,6 +36,11 @@ from stm32loader import args, bootloader, hexfile
 from stm32loader.device_family import DEVICE_FAMILIES, DeviceFamily, DeviceFlag
 from stm32loader.uart import SerialConnection
 
+logger = logging.getLogger(__name__)
+
+# Handlers added by _configure_logging, removed again on the next call.
+_console_handlers = []
+
 
 class Stm32Loader:
     """Main application: parse arguments and handle commands."""
@@ -46,11 +52,6 @@ class Stm32Loader:
         """Construct Stm32Loader object with default settings."""
         self.stm32 = None
         self.configuration = SimpleNamespace()
-
-    def debug(self, level, message):
-        """Log a message to stderror if its level is low enough."""
-        if self.configuration.verbosity >= level:
-            print(message)
 
     def parse_arguments(self, arguments):
         """Parse the list of command-line arguments."""
@@ -70,23 +71,19 @@ class Stm32Loader:
         serial_connection = SerialConnection(
             self.configuration.port, self.configuration.baud, self.configuration.parity
         )
-        self.debug(
-            10,
-            "Open port %(port)s, baud %(baud)d"
-            % {"port": self.configuration.port, "baud": self.configuration.baud},
-        )
+        logger.debug("Open port %s, baud %d", self.configuration.port, self.configuration.baud)
         try:
             serial_connection.connect()
         except IOError as e:
-            print(str(e) + "\n", file=sys.stderr)
-            print(
+            logger.error(
+                "%s\n\n"
                 "Is the device connected and powered correctly?\n"
                 "Please use the --port option to select the correct serial port. Examples:\n"
                 "  --port COM3\n"
                 "  --port /dev/ttyS0\n"
                 "  --port /dev/ttyUSB0\n"
                 "  --port /dev/tty.usbserial-ftCYPMYJ\n",
-                file=sys.stderr,
+                e,
             )
             sys.exit(1)
 
@@ -98,18 +95,16 @@ class Stm32Loader:
 
         self.stm32 = bootloader.Stm32Bootloader(
             serial_connection,
-            verbosity=self.configuration.verbosity,
             show_progress=show_progress,
             device_family=self.configuration.family,
         )
 
         try:
-            print("Activating bootloader (select UART)")
+            logger.info("Activating bootloader (select UART)")
             self.stm32.reset_from_system_memory()
         except bootloader.CommandError:
-            print(
-                "Can't init into bootloader. Ensure that BOOT0 is enabled and reset the device.",
-                file=sys.stderr,
+            logger.error(
+                "Can't init into bootloader. Ensure that BOOT0 is enabled and reset the device."
             )
             self.stm32.reset_from_flash()
             sys.exit(1)
@@ -129,16 +124,14 @@ class Stm32Loader:
             try:
                 self.stm32.readout_unprotect()
             except bootloader.CommandError:
-                self.debug(0, "Flash readout unprotect failed")
-                self.debug(0, "Quit")
+                logger.error("Flash readout unprotect failed")
                 self.stm32.reset_from_flash()
                 sys.exit(1)
         if self.configuration.protect:
             try:
                 self.stm32.readout_protect()
             except bootloader.CommandError:
-                self.debug(0, "Flash readout protect failed")
-                self.debug(0, "Quit")
+                logger.error("Flash readout protect failed")
                 self.stm32.reset_from_flash()
                 sys.exit(1)
 
@@ -146,8 +139,7 @@ class Stm32Loader:
             try:
                 self.stm32.write_unprotect()
             except bootloader.CommandError:
-                self.debug(0, "Flash write unprotect failed")
-                self.debug(0, "Quit")
+                logger.error("Flash write unprotect failed")
                 self.stm32.reset_from_flash()
                 sys.exit(1)
 
@@ -155,26 +147,26 @@ class Stm32Loader:
             try:
                 if self.configuration.length is None:
                     # Erase full device.
-                    self.debug(0, "Performing full erase...")
+                    logger.info("Performing full erase...")
                     self.stm32.erase_memory(pages=None)
                 else:
                     # Erase from address to address + length.
                     start_address = self.configuration.address
                     end_address = self.configuration.address + self.configuration.length
                     pages = self.stm32.pages_from_range(start_address, end_address)
-                    self.debug(
-                        0,
-                        f"Performing partial erase (0x{start_address:X} - 0x{end_address:X},"
-                        f" {len(pages)} pages)... ",
+                    logger.info(
+                        "Performing partial erase (0x%X - 0x%X, %d pages)... ",
+                        start_address,
+                        end_address,
+                        len(pages),
                     )
                     self.stm32.erase_memory(pages)
 
             except bootloader.CommandError:
                 # may be caused by readout protection
-                self.debug(
-                    0,
+                logger.error(
                     "Erase failed -- probably due to readout protection.\n"
-                    "Consider using the --unprotect option.",
+                    "Consider using the --unprotect option."
                 )
                 self.stm32.reset_from_flash()
                 sys.exit(1)
@@ -185,8 +177,7 @@ class Stm32Loader:
             try:
                 self.stm32.write_protect(sectors=None)
             except bootloader.CommandError:
-                self.debug(0, "Flash write protect failed")
-                self.debug(0, "Quit")
+                logger.error("Flash write protect failed")
                 self.stm32.reset_from_flash()
                 sys.exit(1)
 
@@ -194,9 +185,9 @@ class Stm32Loader:
             read_data = self.stm32.read_memory_data(self.configuration.address, len(binary_data))
             try:
                 bootloader.Stm32Bootloader.verify_data(read_data, binary_data)
-                print("Verification OK")
+                logger.info("Verification OK")
             except bootloader.DataMismatchError as e:
-                print("Verification FAILED: %s" % e, file=sys.stderr)
+                logger.error("Verification FAILED: %s", e)
                 sys.exit(1)
         if not self.configuration.write and self.configuration.read:
             read_data = self.stm32.read_memory_data(
@@ -214,41 +205,35 @@ class Stm32Loader:
     def detect_device(self) -> None:
         """Detect the STM32 device type by querying bootloader and regs."""
         boot_version = self.stm32.get()
-        self.debug(0, "Bootloader version: 0x%X" % boot_version)
+        logger.info("Bootloader version: 0x%X", boot_version)
         self.stm32.detect_device()
         if self.stm32.device.bootloader_id is not None:
-            self.debug(5, f"Bootloader ID: 0x{self.stm32.device.bootloader_id:02X}")
-        self.debug(0, f"Chip ID: 0x{self.stm32.device.product_id:03X}")
-        self.debug(0, f"Chip model: {self.stm32.device.device_name}")
+            logger.info("Bootloader ID: 0x%02X", self.stm32.device.bootloader_id)
+        logger.info("Chip ID: 0x%03X", self.stm32.device.product_id)
+        logger.info("Chip model: %s", self.stm32.device.device_name)
 
     def read_device_uid(self):
         """Show chip UID."""
         try:
             device_uid = self.stm32.get_uid()
         except bootloader.CommandError as e:
-            self.debug(
-                0,
-                "Something was wrong with reading chip UID: " + str(e),
-            )
+            logger.warning("Something was wrong with reading chip UID: %s", e)
             return
 
         if device_uid != bootloader.Stm32Bootloader.UID_NOT_SUPPORTED:
             device_uid_string = self.stm32.format_uid(device_uid)
-            self.debug(0, "Device UID: %s" % device_uid_string)
+            logger.info("Device UID: %s", device_uid_string)
 
     def read_flash_size(self):
         """Show chip flash size."""
         try:
             flash_size = self.stm32.get_flash_size()
         except bootloader.CommandError as e:
-            self.debug(
-                0,
-                "Something was wrong with reading chip flash size: " + str(e),
-            )
+            logger.warning("Something was wrong with reading chip flash size: %s", e)
             return
 
         if flash_size != bootloader.Stm32Bootloader.FLASH_SIZE_UNKNOWN:
-            self.debug(0, f"Flash size: {flash_size} kiB")
+            logger.info("Flash size: %d kiB", flash_size)
 
     @staticmethod
     def _get_progress_bar(no_progress=False):
@@ -256,6 +241,57 @@ class Stm32Loader:
             return None
 
         return bootloader.ShowProgress(progress_bar)
+
+
+class _BelowWarningFilter(logging.Filter):  # pylint: disable=too-few-public-methods
+    """Pass only records below WARNING level."""
+
+    def filter(self, record):
+        return record.levelno < logging.WARNING
+
+
+class _ConsoleHandler(logging.StreamHandler):
+    """Write to the current sys.stdout or sys.stderr, even if replaced."""
+
+    # pylint: disable-next=super-init-not-called
+    def __init__(self, stream_name):
+        # Skip StreamHandler.__init__: it assigns to the stream property.
+        logging.Handler.__init__(self)  # pylint: disable=non-parent-init-called
+        self.stream_name = stream_name
+
+    @property
+    def stream(self):
+        """Return the stream that sys currently uses."""
+        return getattr(sys, self.stream_name)
+
+
+def _configure_logging(verbosity):
+    """
+    Send stm32loader's log output to the console.
+
+    Info and debug messages go to stdout, warnings and errors to stderr.
+    """
+    package_logger = logging.getLogger("stm32loader")
+    for handler in _console_handlers:
+        package_logger.removeHandler(handler)
+
+    formatter = logging.Formatter("%(message)s")
+    stdout_handler = _ConsoleHandler("stdout")
+    stdout_handler.addFilter(_BelowWarningFilter())
+    stderr_handler = _ConsoleHandler("stderr")
+    stderr_handler.setLevel(logging.WARNING)
+    _console_handlers[:] = [stdout_handler, stderr_handler]
+    for handler in _console_handlers:
+        handler.setFormatter(formatter)
+        package_logger.addHandler(handler)
+
+    if verbosity <= 0:
+        package_logger.setLevel(logging.WARNING)
+    elif verbosity <= args.DEFAULT_VERBOSITY:
+        package_logger.setLevel(logging.INFO)
+    else:
+        package_logger.setLevel(logging.DEBUG)
+    package_logger.propagate = False
 
 
 def main(*arguments, **kwargs):
@@ -267,6 +303,7 @@ def main(*arguments, **kwargs):
     try:
         loader = Stm32Loader()
         loader.parse_arguments(arguments)
+        _configure_logging(loader.configuration.verbosity)
         loader.connect()
         try:
             loader.detect_device()

@@ -19,7 +19,7 @@ def test_erase_write_verify_passes():
         family=None,
     )
     loader.connection = FakeConnection()
-    loader.stm32 = Stm32Bootloader(loader.connection, device_family="F1", verbosity=5)
+    loader.stm32 = Stm32Bootloader(loader.connection, device_family="F1")
 
     loader.detect_device()
     loader.read_device_uid()
@@ -39,7 +39,7 @@ def test_write_protect_passes():
         family=None,
     )
     loader.connection = FakeConnection()
-    loader.stm32 = Stm32Bootloader(loader.connection, verbosity=5)
+    loader.stm32 = Stm32Bootloader(loader.connection)
 
     loader.detect_device()
     loader.read_device_uid()
@@ -60,7 +60,7 @@ def test_erase_resets_flash_to_0xff():
     )
     loader.connection = FakeConnection()
     loader.connection.flash_memory[:] = b"\x00" * len(loader.connection.flash_memory)
-    loader.stm32 = Stm32Bootloader(loader.connection, device_family="F1", verbosity=5)
+    loader.stm32 = Stm32Bootloader(loader.connection, device_family="F1")
 
     loader.detect_device()
     loader.perform_commands()

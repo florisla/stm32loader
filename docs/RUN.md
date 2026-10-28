@@ -36,7 +36,12 @@ You can use the classes of `stm32loader` from a Python script.
 Example:
 
 ```python
+import logging
+
 from stm32loader.main import Stm32Loader
+
+# Show stm32loader's progress messages.
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 loader = Stm32Loader()
 loader.parse_arguments(["--port", "/dev/cu.usbserial-A5XK3RJT"])

@@ -97,8 +97,8 @@ def test_device_not_connected_prints_readable_error(stm32loader, capsys):
 def test_argument_family_prints_chip_id_and_device_type(stm32loader, capsys):
     stm32loader("--family", STM32_CHIP_FAMILY)
     captured = capsys.readouterr()
-    assert STM32_CHIP_ID in captured.err
-    assert STM32_CHIP_TYPE in captured.err
+    assert STM32_CHIP_ID in captured.out
+    assert STM32_CHIP_TYPE in captured.out
 
 
 @pytest.mark.hardware

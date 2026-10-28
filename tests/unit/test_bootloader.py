@@ -51,6 +51,11 @@ def test_constructor_does_not_use_connection_directly(connection):
     assert not connection.method_calls
 
 
+def test_constructor_with_verbosity_warns_deprecation(connection):
+    with pytest.deprecated_call(match="verbosity is ignored"):
+        Stm32Bootloader(connection, verbosity=5)
+
+
 def test_write_without_data_sends_no_bytes(bootloader, write):
     bootloader.write()
     assert not write.written_data

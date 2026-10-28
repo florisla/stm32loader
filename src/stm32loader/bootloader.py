@@ -22,10 +22,12 @@
 from __future__ import annotations
 
 import enum
+import logging
 import math
 import operator
 import struct
 import time
+import warnings
 from functools import lru_cache, reduce
 
 from stm32loader.device_family import DeviceFamily, DeviceFlag
@@ -33,6 +35,8 @@ from stm32loader.device_info import DeviceInfo
 from stm32loader.devices import DEVICES
 
 # pylint: disable=too-many-lines
+
+logger = logging.getLogger(__name__)
 
 CHIP_IDS = {
     # see ST AN2606 Table 136 Bootloader device-dependent parameters
@@ -393,7 +397,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
     SYNCHRONIZE_TIMEOUT = 0.5
 
     def __init__(  # pylint: disable=too-many-positional-arguments,too-many-arguments
-        self, connection, device=None, device_family=None, verbosity=5, show_progress=None
+        self, connection, device=None, device_family=None, verbosity=None, show_progress=None
     ):
         """
         Construct the Stm32Bootloader object.
@@ -408,12 +412,18 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
 
         :param connection: Object supporting read() and write().
             E.g. serial.Serial().
-        :param int verbosity: Verbosity level. 0 is quiet, 10 is verbose.
+        :param verbosity: Deprecated and ignored. Configure the 'stm32loader'
+            logger instead.
         :param ShowProgress show_progress: ShowProgress context manager.
             Set to None to disable progress bar output.
         """
+        if verbosity is not None:
+            warnings.warn(
+                "verbosity is ignored; configure the 'stm32loader' logger instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.connection = connection
-        self.verbosity = verbosity
         self.show_progress = show_progress or ShowProgress(None)
         self.extended_erase = False
         self.supported_commands = {}
@@ -425,10 +435,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
             self.device = device
             self.device_family = device.family.name
             if device_family and device_family != self.device_family:
-                self.debug(
-                    0, f"Device family mismatch with the given device family: {device_family}"
+                logger.warning(
+                    "Device family mismatch with the given device family: %s", device_family
                 )
-                self.debug(0, f"Use device family: {self.device_family}")
+                logger.info("Use device family: %s", self.device_family)
         elif device_family:
             self.device_family = device_family
             self.device = None
@@ -442,8 +452,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         """Update transfer info based on the device family."""
         self.data_transfer_size = self.DATA_TRANSFER_SIZE.get(self.device_family or "default")
         self.flash_page_size = self.FLASH_PAGE_SIZE.get(self.device_family or "default")
-        self.debug(6, f"Data transfer size updated: {self.data_transfer_size} bytes")
-        self.debug(6, f"Flash page size updated: {self.flash_page_size} bytes")
+        logger.debug("Data transfer size updated: %s bytes", self.data_transfer_size)
+        logger.debug("Flash page size updated: %s bytes", self.flash_page_size)
 
     def write(self, *data):
         """Write the given data to the MCU."""
@@ -458,11 +468,6 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         # argument after *args was not possible in Python 2
         self.write(*data)
         return self._wait_for_ack(message)
-
-    def debug(self, level, message):
-        """Print the given message if its level is low enough."""
-        if self.verbosity >= level:
-            print(message)
 
     def reset_from_system_memory(self):
         """Reset the MCU with boot0 enabled to enter the bootloader."""
@@ -492,7 +497,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         try:
             for attempt in range(self.SYNCHRONIZE_ATTEMPTS):
                 if attempt:
-                    print("Bootloader activation timeout -- retrying")
+                    logger.warning("Bootloader activation timeout -- retrying")
                 self.write(self.Command.SYNCHRONIZE)
                 read_data = bytearray(self.connection.read())
 
@@ -516,7 +521,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
 
         Raise CommandError if there's no ACK replied.
         """
-        self.debug(10, "*** Command: %s" % description)
+        logger.debug("*** Command: %s", description)
         ack_received = self.write_and_ack("Command", command, command ^ 0xFF)
         if not ack_received:
             raise CommandError("%s (%s) failed: no ack" % (description, command))
@@ -526,12 +531,12 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         self.command(self.Command.GET, "Get")
         length = bytearray(self.connection.read())[0]
         version = bytearray(self.connection.read())[0]
-        self.debug(10, "    Bootloader version: " + hex(version))
+        logger.debug("    Bootloader version: 0x%x", version)
         supported_commands = bytearray(self.connection.read(length))
         self.supported_commands = {command: True for command in supported_commands}
         self.extended_erase = self.Command.EXTENDED_ERASE in self.supported_commands
-        self.debug(
-            10, "    Available commands: " + ", ".join(hex(b) for b in self.supported_commands)
+        logger.debug(
+            "    Available commands: %s", ", ".join(hex(b) for b in self.supported_commands)
         )
         self._wait_for_ack("0x00 end")
         return version
@@ -548,9 +553,9 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         option_byte1 = data[1]
         option_byte2 = data[2]
         self._wait_for_ack("0x01 end")
-        self.debug(10, "    Bootloader version: " + hex(version))
-        self.debug(10, "    Option byte 1: " + hex(option_byte1))
-        self.debug(10, "    Option byte 2: " + hex(option_byte2))
+        logger.debug("    Bootloader version: 0x%x", version)
+        logger.debug("    Option byte 1: 0x%x", option_byte1)
+        logger.debug("    Option byte 2: 0x%x", option_byte2)
         return version
 
     def get_id(self):
@@ -647,8 +652,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         flash_size_lsb_address = flash_size_address - data_start_address
         uid_lsb_address = uid_address - data_start_address
 
-        self.debug(10, "flash_size_address = 0x%X" % flash_size_address)
-        self.debug(10, "uid_address = 0x%X" % uid_address)
+        logger.debug("flash_size_address = 0x%X", flash_size_address)
+        logger.debug("uid_address = 0x%X", uid_address)
 
         data = self.read_memory(data_start_address, self.data_transfer_size)
         device_uid = data[uid_lsb_address : uid_lsb_address + 12]
@@ -686,8 +691,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
                 self.device_family = self.device.family.name
             else:
                 # Device family is manually set.
-                self.debug(
-                    1, f"Device family is already set to {self.device_family}. Not updating."
+                logger.info(
+                    "Device family is already set to %s. Not updating.", self.device_family
                 )
             self.update_transfer_info()
             self.update_flash_bank_mode()
@@ -700,10 +705,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         try:
             optr_bytes = self.read_memory(self.device.option_bytes[0], 4)
         except CommandError:
-            self.debug(
-                0,
+            logger.warning(
                 "Could not read option bytes to detect flash bank mode; "
-                f"assuming page size {self.flash_page_size} bytes.",
+                "assuming page size %s bytes.",
+                self.flash_page_size,
             )
             return
 
@@ -711,10 +716,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         dual_bank = bool(optr & (1 << self.G4_DBANK_BIT))
         if not dual_bank:
             self.flash_page_size = self.FLASH_PAGE_SIZE["G4sp"]
-        self.debug(
-            5,
-            f"Flash bank mode: {'dual' if dual_bank else 'single'} bank,"
-            f" page size {self.flash_page_size} bytes",
+        logger.info(
+            "Flash bank mode: %s bank, page size %s bytes",
+            "dual" if dual_bank else "single",
+            self.flash_page_size,
         )
 
     def get_bootloader_id(self):
@@ -782,10 +787,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
             data = bytearray(data)
             data.extend([0xFF] * padding_bytes)
 
-        self.debug(10, "    %s bytes to write" % [nr_of_bytes])
+        logger.debug("    %s bytes to write", [nr_of_bytes])
         checksum = reduce(operator.xor, data, nr_of_bytes - 1)
         self.write_and_ack("0x31 programming failed", nr_of_bytes - 1, data, checksum)
-        self.debug(10, "    Write memory done")
+        logger.debug("    Write memory done")
 
     def erase_memory(self, pages=None):
         """
@@ -821,15 +826,15 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
             page_count = len(pages) - 1
             page_numbers = bytearray(pages)
             checksum = reduce(operator.xor, page_numbers, page_count)
-            self.debug(5, f"Flash erase {page_count} pages from {pages[0]} to {pages[-1]}")
+            logger.info("Flash erase %d pages from %d to %d", page_count, pages[0], pages[-1])
             self.write(page_count, page_numbers, checksum)
         else:
             # global erase: n=255 (page count)
-            self.debug(5, "Flash global erase")
+            logger.info("Flash global erase")
             self.write(255, 0)
 
         self._wait_for_ack("0x43 erase failed")
-        self.debug(10, "    Erase memory done")
+        logger.debug("    Erase memory done")
 
     def extended_erase_memory(self, pages=None):
         """
@@ -864,22 +869,22 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
                 struct.pack_into(">H", page_bytes, i * 2, page)
             checksum = reduce(operator.xor, page_count_bytes)
             checksum = reduce(operator.xor, page_bytes, checksum)
-            self.debug(5, f"Flash erase {page_count + 1} pages from {pages[0]} to {pages[-1]}")
+            logger.info("Flash erase %d pages from %d to %d", page_count + 1, pages[0], pages[-1])
             self.write(page_count_bytes, page_bytes, checksum)
         else:
             # global mass erase: n=0xffff (page count) + checksum
             # TO DO: support 0xfffe bank 1 erase / 0xfffe bank 2 erase
-            self.debug(5, "Flash global erase")
+            logger.info("Flash global erase")
             self.write(b"\xff\xff\x00")
 
         previous_timeout_value = self.connection.timeout
         self.connection.timeout = 30
-        print("Extended erase (0x44), this can take ten seconds or more")
+        logger.info("Extended erase (0x44), this can take ten seconds or more")
         try:
             self._wait_for_ack("0x44 erasing failed")
         finally:
             self.connection.timeout = previous_timeout_value
-        self.debug(10, "    Extended Erase memory done")
+        logger.debug("    Extended Erase memory done")
 
     def write_protect(self, sectors=None) -> None:
         """Enable write protection on the given flash sectors."""
@@ -894,7 +899,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
                 f"Write protection support for '{self.device}' not currently implemented."
             )
 
-        self.debug(10, "Enabling write protection")
+        logger.debug("Enabling write protection")
         if sectors is None:
             if self.device.flash is None:
                 raise Stm32LoaderError(
@@ -924,8 +929,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         if num_sectors > 255:
             raise DataLengthError("Write protection only supports up to 256 sectors.")
 
-        self.debug(
-            5, f"Write protecting {num_sectors} sectors, flash size: {self.device.flash.size}"
+        logger.info(
+            "Write protecting %s sectors, flash size: %s", num_sectors, self.device.flash.size
         )
 
         self.command(self.Command.WRITE_PROTECT, "Write protect")
@@ -934,23 +939,23 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
 
         time.sleep(0.1)
         self.reset_from_system_memory()
-        self.debug(10, "    Write protect done")
+        logger.debug("    Write protect done")
 
     def write_unprotect(self) -> None:
         """Disable write protection of the flash memory."""
-        self.debug(10, "Disabling write protection")
+        logger.debug("Disabling write protection")
         self.command(self.Command.WRITE_UNPROTECT, "Write unprotect")
         self._wait_for_ack("0x73 write unprotect failed")
 
         time.sleep(0.1)
         self.reset_from_system_memory()
-        self.debug(10, "    Write Unprotect done")
+        logger.debug("    Write Unprotect done")
 
     def readout_protect(self):
         """Enable readout protection of the flash memory."""
         self.command(self.Command.READOUT_PROTECT, "Readout protect")
         self._wait_for_ack("0x82 readout protect failed")
-        self.debug(10, "    Read protect done")
+        logger.debug("    Read protect done")
 
     def readout_unprotect(self):
         """
@@ -960,10 +965,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         """
         self.command(self.Command.READOUT_UNPROTECT, "Readout unprotect")
         self._wait_for_ack("0x92 readout unprotect failed")
-        self.debug(20, "    Mass erase -- this may take a while")
+        logger.debug("    Mass erase -- this may take a while")
         time.sleep(20)
-        self.debug(20, "    Unprotect / mass erase done")
-        self.debug(20, "    Reset after automatic chip reset due to readout unprotect")
+        logger.debug("    Unprotect / mass erase done")
+        logger.debug("    Reset after automatic chip reset due to readout unprotect")
         self.reset_from_system_memory()
 
     def read_memory_data(self, address, length):
@@ -974,17 +979,13 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         """
         data = bytearray()
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
-        self.debug(
-            10, "Read %7d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address)
+        logger.debug(
+            "Read %7d bytes in %3d chunks at address 0x%X...", length, chunk_count, address
         )
         with self.show_progress("Reading", maximum=chunk_count) as progress_bar:
             while length:
                 read_length = min(length, self.data_transfer_size)
-                self.debug(
-                    10,
-                    "Read %(len)d bytes at 0x%(address)X"
-                    % {"address": address, "len": read_length},
-                )
+                logger.debug("Read %d bytes at 0x%X", read_length, address)
                 data = data + self.read_memory(address, read_length)
                 progress_bar.next()
                 length = length - read_length
@@ -1000,18 +1001,14 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         length = len(data)
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
         offset = 0
-        self.debug(
-            5, "Write %6d bytes in %3d chunks at address 0x%X..." % (length, chunk_count, address)
+        logger.info(
+            "Write %6d bytes in %3d chunks at address 0x%X...", length, chunk_count, address
         )
 
         with self.show_progress("Writing", maximum=chunk_count) as progress_bar:
             while length:
                 write_length = min(length, self.data_transfer_size)
-                self.debug(
-                    10,
-                    "Write %(len)d bytes at 0x%(address)X"
-                    % {"address": address, "len": write_length},
-                )
+                logger.debug("Write %d bytes at 0x%X", write_length, address)
                 self.write_memory(address, data[offset : offset + write_length])
                 progress_bar.next()
                 length -= write_length
