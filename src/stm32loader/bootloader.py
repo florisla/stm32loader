@@ -29,6 +29,7 @@ import struct
 import time
 import warnings
 from functools import lru_cache, reduce
+from itertools import accumulate
 
 from stm32loader.device_family import DeviceFamily, DeviceFlag
 from stm32loader.device_info import DeviceInfo
@@ -324,6 +325,9 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         # ST RM0440 section 48.2 Flash size data register
         "G4": 0x1FFF75E0,
     }
+
+    # Assumed flash start address when the device's flash layout is unknown.
+    FLASH_START_DEFAULT = 0x_0800_0000
 
     DATA_TRANSFER_SIZE = {
         # In bytes.
@@ -801,39 +805,44 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         :param iterable pages: Iterable of integer page addresses, zero-based.
           Set to None to trigger global mass erase.
         """
+        if pages is not None and not pages:
+            raise PageIndexError("No pages to erase.")
+
         if self.extended_erase:
             # Use erase with two-byte addresses instead.
             self.extended_erase_memory(pages)
             return
 
-        self.command(self.Command.ERASE, "Erase memory")
-
-        if not pages and self.device_family == "L0":
+        if pages is None and self.device_family == "L0":
             # Special case: L0 erase should do each page separately.
             flash_size = self.get_flash_size()
-            page_count = (flash_size * 1024) // self.flash_page_size
-            if page_count > 255:
-                raise PageIndexError("Can not erase more than 255 pages for L0 family.")
-            pages = range(page_count)
+            pages = range((flash_size * 1024) // self.flash_page_size)
 
-        if pages:
-            # page erase, see ST AN3155
-            if len(pages) > 255:
-                raise PageIndexError(
-                    "Can not erase more than 255 pages at once.\n"
-                    "Set pages to None to do global erase or supply fewer pages."
-                )
-            page_count = len(pages) - 1
-            page_numbers = bytearray(pages)
-            checksum = reduce(operator.xor, page_numbers, page_count)
-            logger.info("Flash erase %d pages from %d to %d", page_count, pages[0], pages[-1])
-            self.write(page_count, page_numbers, checksum)
-        else:
+        if pages is None:
             # global erase: n=255 (page count)
+            self.command(self.Command.ERASE, "Erase memory")
             logger.info("Flash global erase")
             self.write(255, 0)
+            self._wait_for_ack("0x43 erase failed")
+            logger.debug("    Erase memory done")
+            return
 
-        self._wait_for_ack("0x43 erase failed")
+        # page erase, see ST AN3155
+        # The ERASE command takes at most 255 pages; send several if needed.
+        pages = list(pages)
+        if max(pages) > 255:
+            raise PageIndexError(
+                f"Page index {max(pages)} is too large for the ERASE command (maximum 255)."
+            )
+        for batch_start in range(0, len(pages), 255):
+            batch = pages[batch_start : batch_start + 255]
+            self.command(self.Command.ERASE, "Erase memory")
+            page_count = len(batch) - 1
+            page_numbers = bytearray(batch)
+            checksum = reduce(operator.xor, page_numbers, page_count)
+            logger.info("Flash erase %d pages from %d to %d", len(batch), batch[0], batch[-1])
+            self.write(page_count, page_numbers, checksum)
+            self._wait_for_ack("0x43 erase failed")
         logger.debug("    Erase memory done")
 
     def extended_erase_memory(self, pages=None):
@@ -847,7 +856,10 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         :param iterable pages: Iterable of integer page addresses, zero-based.
           Set to None to trigger global mass erase.
         """
-        if not pages and self.device_family in ("L0",):
+        if pages is not None and not pages:
+            raise PageIndexError("No pages to erase.")
+
+        if pages is None and self.device_family in ("L0",):
             # L0 devices do not support mass erase.
             # Instead, erase all pages individually.
             flash_size = self.get_flash_size()
@@ -1045,25 +1057,68 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
                     % (address, bytearray([read_byte])[0], bytearray([reference_byte])[0])
                 )
 
+    @property
+    def flash_start(self):
+        """Return the device's flash start address, or None if unknown."""
+        if self.device is None or self.device.flash is None:
+            return None
+        return self.device.flash.start
+
     def pages_from_range(self, start, end):
-        """Return page indices for the given memory range."""
-        if start % self.flash_page_size != 0:
+        """
+        Return the page indices for the memory range [start, end).
+
+        start and end are global addresses (e.g. 0x0800_0000), and must
+        both be at a flash page boundary. For devices with mixed page
+        (sector) sizes, the device's flash layout is used.
+        """
+        flash_start = self.flash_start
+        if flash_start is None:
+            flash_start = self.FLASH_START_DEFAULT
+        flash = self.device.flash if self.device else None
+
+        if start < flash_start:
+            raise PageIndexError(
+                f"Erase start address 0x{start:08X} is below the flash start 0x{flash_start:08X}."
+            )
+        if flash is not None and flash.end is not None and end > flash.end:
+            raise PageIndexError(
+                f"Erase end address 0x{end:08X} is beyond the flash end 0x{flash.end:08X}."
+            )
+
+        if flash is not None and isinstance(flash.page_size, list):
+            return self._pages_from_layout(start, end, flash_start, flash.page_size)
+
+        page_size = self.flash_page_size
+        if (start - flash_start) % page_size != 0:
             raise PageIndexError(
                 f"Erase start address should be at a flash page boundary: 0x{start:08X}"
-                f" (page size 0x{self.flash_page_size:04X}).",
+                f" (page size 0x{page_size:04X}).",
             )
-        if end % self.flash_page_size != 0:
+        if (end - flash_start) % page_size != 0:
             raise PageIndexError(
                 f"Erase end address should be at a flash page boundary: 0x{end:08X}"
-                f" (page size 0x{self.flash_page_size:04X}).",
+                f" (page size 0x{page_size:04X}).",
             )
 
         # Assemble the list of pages to erase.
-        first_page = start // self.flash_page_size
-        last_page = end // self.flash_page_size
-        pages = list(range(first_page, last_page))
+        first_page = (start - flash_start) // page_size
+        last_page = (end - flash_start) // page_size
+        return list(range(first_page, last_page))
 
-        return pages
+    @staticmethod
+    def _pages_from_layout(start, end, flash_start, page_sizes):
+        """Return page indices for [start, end) given a list of page sizes."""
+        page_starts = [flash_start + offset for offset in accumulate([0] + page_sizes)]
+        if start not in page_starts:
+            raise PageIndexError(
+                f"Erase start address should be at a flash sector boundary: 0x{start:08X}."
+            )
+        if end not in page_starts:
+            raise PageIndexError(
+                f"Erase end address should be at a flash sector boundary: 0x{end:08X}."
+            )
+        return list(range(page_starts.index(start), page_starts.index(end)))
 
     def _reset(self):
         """Enable or disable the reset IO line (if possible)."""

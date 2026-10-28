@@ -162,9 +162,31 @@ def test_erase_memory_with_pages_sends_sector_addresses_with_checksum(bootloader
     assert write.data_was_written(b"\x01\x02\x04\x08\x0c")
 
 
-def test_erase_memory_with_page_count_higher_than_255_raises_page_index_error(bootloader):
-    with pytest.raises(Stm32.PageIndexError, match="Can not erase more than 255 pages at once."):
-        bootloader.erase_memory([1] * 256)
+def test_erase_memory_with_more_than_255_pages_sends_multiple_erase_commands(bootloader, write):
+    bootloader.erase_memory(list(range(256)))
+
+    erase_command = bytes([0x43, 0x43 ^ 0xFF])
+    assert write.written_data.count(erase_command) == 2
+    # First batch: 255 pages (count - 1 = 254), second batch: page 255 only.
+    assert write.data_was_written(bytes([254]) + bytes(range(255)))
+    assert write.data_was_written(bytes([0, 255]))
+
+
+def test_erase_memory_with_page_index_above_255_raises_page_index_error(bootloader):
+    with pytest.raises(Stm32.PageIndexError, match="too large for the ERASE command"):
+        bootloader.erase_memory([1, 256])
+
+
+def test_erase_memory_with_empty_pages_raises_page_index_error(bootloader, write):
+    with pytest.raises(Stm32.PageIndexError, match="No pages to erase"):
+        bootloader.erase_memory([])
+    assert not write.written_data
+
+
+def test_extended_erase_memory_with_empty_pages_raises_page_index_error(bootloader, write):
+    with pytest.raises(Stm32.PageIndexError, match="No pages to erase"):
+        bootloader.extended_erase_memory([])
+    assert not write.written_data
 
 
 def test_extended_erase_memory_without_pages_sends_global_mass_erase(bootloader, write):
@@ -353,15 +375,18 @@ def test_format_uid_returns_correct_string(bootloader, uid_string):
     assert description == expected_description
 
 
+FLASH = 0x_0800_0000
+
+
 def test_get_pages_from_range_with_invalid_start_address_raises_page_index_error(bootloader):
     with pytest.raises(
         PageIndexError, match=".*start address should be at a flash page boundary.*"
     ):
-        bootloader.pages_from_range(10, 1024)
+        bootloader.pages_from_range(FLASH + 10, FLASH + 1024)
 
 
-def test_get_pages_from_range_with_start_address_zero_returns_single_page(bootloader):
-    pages = bootloader.pages_from_range(0, 2048)
+def test_get_pages_from_range_with_flash_start_returns_single_page(bootloader):
+    pages = bootloader.pages_from_range(FLASH, FLASH + 2048)
     assert pages == [0]
 
 
@@ -369,12 +394,53 @@ def test_get_pages_from_range_with_end_too_small_raises_page_index_error(bootloa
     with pytest.raises(
         PageIndexError, match="Erase .* address should be at a flash page boundary:.*0400.*0800"
     ):
-        bootloader.pages_from_range(0, 1024)
+        bootloader.pages_from_range(FLASH, FLASH + 1024)
 
 
 def test_get_pages_from_large_range_returns_multiple_pages(bootloader):
-    pages = bootloader.pages_from_range(4 * 1024, 20 * 1024)
+    pages = bootloader.pages_from_range(FLASH + 4 * 1024, FLASH + 20 * 1024)
     assert pages == list(range(2, 10))
+
+
+def test_get_pages_from_range_below_flash_start_raises_page_index_error(bootloader):
+    with pytest.raises(PageIndexError, match="below the flash start 0x08000000"):
+        bootloader.pages_from_range(0, 2048)
+
+
+def test_get_pages_from_range_beyond_flash_end_raises_page_index_error(bootloader):
+    flash_end = bootloader.device.flash.end
+    with pytest.raises(PageIndexError, match="beyond the flash end"):
+        bootloader.pages_from_range(flash_end - 2048, flash_end + 2048)
+
+
+def test_get_pages_from_range_without_device_assumes_default_flash_start(connection):
+    bootloader = Stm32Bootloader(connection, device_family="F1")
+    pages = bootloader.pages_from_range(FLASH + 1024, FLASH + 3 * 1024)
+    assert pages == [1, 2]
+
+
+@pytest.fixture
+def f4_bootloader(connection):
+    # STM32F40xxx/41xxx: sectors of 4x16K, 1x64K, 7x128K.
+    return Stm32Bootloader(connection, device=DEVICES[(0x413, 0x31)])
+
+
+@pytest.mark.parametrize(
+    "start, end, expected_pages",
+    [
+        (FLASH, FLASH + 16 * 1024, [0]),
+        (FLASH + 16 * 1024, FLASH + 128 * 1024, [1, 2, 3, 4]),
+        (FLASH + 128 * 1024, FLASH + 384 * 1024, [5, 6]),
+    ],
+)
+def test_get_pages_from_range_with_mixed_sector_sizes(f4_bootloader, start, end, expected_pages):
+    assert f4_bootloader.pages_from_range(start, end) == expected_pages
+
+
+def test_get_pages_from_range_with_mixed_sector_sizes_requires_sector_boundary(f4_bootloader):
+    # FLASH + 96K lies inside sector 4, which spans 64K-128K.
+    with pytest.raises(PageIndexError, match="end address should be at a flash sector boundary"):
+        f4_bootloader.pages_from_range(FLASH, FLASH + 96 * 1024)
 
 
 def test_get_flash_size_for_standard_family(connection):
