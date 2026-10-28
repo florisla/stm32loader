@@ -1,4 +1,5 @@
 import atexit
+import re
 
 import pytest
 
@@ -74,7 +75,7 @@ def test_help_shows_port_as_required(program, capsys):
         program.parse_arguments(["--help"])
 
     output, _error_output = capsys.readouterr()
-    assert " -p PORT " in output
+    assert re.search(r"\s-p PORT\s", output)
     assert "[-p PORT]" not in output
 
 
