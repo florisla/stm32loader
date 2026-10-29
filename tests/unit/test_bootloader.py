@@ -443,6 +443,46 @@ def test_get_pages_from_range_with_mixed_sector_sizes_requires_sector_boundary(f
         f4_bootloader.pages_from_range(FLASH, FLASH + 96 * 1024)
 
 
+@pytest.mark.parametrize(
+    "start, end, expected_pages",
+    [
+        (FLASH, FLASH + 2048, [0]),
+        (FLASH + 10, FLASH + 20, [0]),
+        (FLASH + 2047, FLASH + 2049, [0, 1]),
+        (FLASH + 100, FLASH + 5000, [0, 1, 2]),
+        (FLASH + 4 * 1024, FLASH + 20 * 1024, list(range(2, 10))),
+    ],
+)
+def test_get_pages_covering_range_extends_to_whole_pages(bootloader, start, end, expected_pages):
+    assert bootloader.pages_covering_range(start, end) == expected_pages
+
+
+@pytest.mark.parametrize(
+    "start, end, expected_pages",
+    [
+        (FLASH, FLASH + 1, [0]),
+        (FLASH + 16 * 1024, FLASH + 128 * 1024, [1, 2, 3, 4]),
+        (FLASH + 96 * 1024, FLASH + 130 * 1024, [4, 5]),
+        (FLASH + 15 * 1024, FLASH + 64 * 1024, [0, 1, 2, 3]),
+    ],
+)
+def test_get_pages_covering_range_with_mixed_sector_sizes(
+    f4_bootloader, start, end, expected_pages
+):
+    assert f4_bootloader.pages_covering_range(start, end) == expected_pages
+
+
+def test_get_pages_covering_range_below_flash_start_raises_page_index_error(bootloader):
+    with pytest.raises(PageIndexError, match="below the flash start 0x08000000"):
+        bootloader.pages_covering_range(FLASH - 1, FLASH + 10)
+
+
+def test_get_pages_covering_range_beyond_flash_end_raises_page_index_error(bootloader):
+    flash_end = bootloader.device.flash.end
+    with pytest.raises(PageIndexError, match="beyond the flash end"):
+        bootloader.pages_covering_range(flash_end - 10, flash_end + 1)
+
+
 def test_get_flash_size_for_standard_family(connection):
     device = DEVICES.get((0x412, None))
     bootloader = Stm32Bootloader(connection, device=device)

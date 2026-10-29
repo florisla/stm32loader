@@ -125,14 +125,16 @@ class Stm32Loader:
         # Check the target range before touching the device.
         address = self._target_address()
         erase_pages = None
-        if self.configuration.erase and self.configuration.length is not None:
-            try:
+        try:
+            if self.configuration.erase and self.configuration.length is not None:
                 erase_pages = self.stm32.pages_from_range(
                     address, address + self.configuration.length
                 )
-            except bootloader.PageIndexError as e:
-                logger.error("%s", e)
-                sys.exit(1)
+            elif self.configuration.auto_erase and binary_data:
+                erase_pages = self.stm32.pages_covering_range(address, address + len(binary_data))
+        except bootloader.PageIndexError as e:
+            logger.error("%s", e)
+            sys.exit(1)
 
         if self.configuration.unprotect:
             try:
@@ -157,9 +159,17 @@ class Stm32Loader:
                 self.stm32.reset_from_flash()
                 sys.exit(1)
 
-        if self.configuration.erase:
+        if self.configuration.erase or erase_pages:
             try:
-                if erase_pages is None:
+                if self.configuration.auto_erase:
+                    logger.info(
+                        "Performing auto erase (0x%X - 0x%X, %d pages)... ",
+                        address,
+                        address + len(binary_data),
+                        len(erase_pages),
+                    )
+                    self.stm32.erase_memory(erase_pages)
+                elif erase_pages is None:
                     # Erase full device.
                     logger.info("Performing full erase...")
                     self.stm32.erase_memory(pages=None)

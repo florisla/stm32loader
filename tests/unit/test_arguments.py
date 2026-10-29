@@ -119,3 +119,23 @@ def test_parse_arguments_read_without_address_or_offset_raises_systemexit(progra
 
     _output, error_output = capsys.readouterr()
     assert "one of the arguments -a/--address -o/--offset is required" in error_output
+
+
+def test_parse_arguments_auto_erase_with_write(program):
+    program.parse_arguments(["-p", "port", "-E", "-w", "file.bin"])
+    assert program.configuration.auto_erase
+
+
+@pytest.mark.parametrize(
+    "arguments, message",
+    [
+        (["--auto-erase", "-v", "file.bin"], "requires -w/--write"),
+        (["-E", "-e", "-w", "file.bin"], "not allowed with argument -e/--erase"),
+    ],
+)
+def test_parse_arguments_auto_erase_invalid_combination_raises_systemexit(
+    program, arguments, message, capsys
+):
+    with pytest.raises(SystemExit):
+        program.parse_arguments(["-p", "port", *arguments])
+    assert message in capsys.readouterr().err

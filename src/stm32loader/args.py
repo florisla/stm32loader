@@ -114,6 +114,13 @@ def parse_arguments(arguments):
     )
 
     parser.add_argument(
+        "-E",
+        "--auto-erase",
+        action="store_true",
+        help="Before writing, erase only the flash pages that the written data covers.",
+    )
+
+    parser.add_argument(
         "-u", "--unprotect", action="store_true", help="Unprotect flash from readout."
     )
 
@@ -278,6 +285,11 @@ def parse_arguments(arguments):
                 file=sys.stderr,
             )
         )
+
+    if configuration.auto_erase and not configuration.write:
+        parser.error("argument -E/--auto-erase: requires -w/--write")
+    if configuration.auto_erase and configuration.erase:
+        parser.error("argument -E/--auto-erase: not allowed with argument -e/--erase")
 
     if configuration.read or configuration.write or configuration.verify:
         data_file_arg.nargs = None

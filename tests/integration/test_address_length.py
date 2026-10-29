@@ -123,3 +123,27 @@ def test_erase_with_unaligned_length_aborts_before_touching_device(loader, caplo
 
     assert "end address should be at a flash page boundary" in caplog.text
     assert not any(loader.connection.flash_memory)
+
+
+def test_auto_erase_erases_only_pages_covered_by_data(loader, caplog):
+    loader.configuration.auto_erase = True
+    loader.configuration.address = FLASH + 0x100
+
+    with caplog.at_level(logging.INFO):
+        loader.perform_commands()
+
+    # 4 KiB of data at offset 0x100 spans three 2 KiB pages.
+    assert "Performing auto erase (0x8000100 - 0x8001100, 3 pages)" in caplog.text
+    assert "Flash erase 3 pages from 0 to 2" in caplog.text
+    assert flash_at(loader, FLASH + 0x100, len(DATA)) == DATA
+
+
+def test_auto_erase_beyond_flash_end_aborts_before_touching_device(loader, caplog):
+    loader.configuration.auto_erase = True
+    loader.configuration.address = loader.stm32.device.flash.end - 1024
+
+    with pytest.raises(SystemExit):
+        loader.perform_commands()
+
+    assert "beyond the flash end" in caplog.text
+    assert not any(loader.connection.flash_memory)

@@ -51,10 +51,10 @@ sys.stdout.close()
 sys.stdout = sys.__stdout__
 ]]] -->
 ```
-usage: stm32loader [-h] [-e] [-u] [-x] [--write-unprotect] [--write-protect]
-                   [-w] [-v] [-r] [-l LENGTH] -p PORT [-b BAUD] [-a ADDRESS |
-                   -o OFFSET] [-g ADDRESS] [-f FAMILY] [-V] [-q] [-s] [-R]
-                   [-B] [-n] [-P {even,none}] [--version]
+usage: stm32loader [-h] [-e] [-E] [-u] [-x] [--write-unprotect]
+                   [--write-protect] [-w] [-v] [-r] [-l LENGTH] -p PORT
+                   [-b BAUD] [-a ADDRESS | -o OFFSET] [-g ADDRESS] [-f FAMILY]
+                   [-V] [-q] [-s] [-R] [-B] [-n] [-P {even,none}] [--version]
                    [FILE.BIN]
 
 Flash firmware to STM32 microcontrollers.
@@ -67,6 +67,8 @@ options:
   -e, --erase           Erase the full flash memory or a specific region
                         (support --address and --length). Note: this is
                         required on previously written memory.
+  -E, --auto-erase      Before writing, erase only the flash pages that the
+                        written data covers.
   -u, --unprotect       Unprotect flash from readout.
   -x, --protect         Protect flash against readout.
   --write-unprotect     Disable write protection before flashing
@@ -118,6 +120,16 @@ stm32loader --port /dev/tty.usbserial-ftCYPMYJ --erase --write --verify somefile
 
 This will pre-erase flash, write `somefile.bin` to the flash on the device, and then
 perform a verification after writing is finished.
+
+To erase only the flash pages that the new data will occupy, use `--auto-erase`
+instead of `--erase`:
+
+```
+stm32loader --port /dev/tty.usbserial-ftCYPMYJ --auto-erase --write --verify somefile.bin
+```
+
+The erased range is rounded out to whole pages (sectors), following the device's
+flash layout. This also works on devices with mixed sector sizes.
 
 You can skip the `--port` option by configuring environment variable
 `STM32LOADER_SERIAL_PORT`.

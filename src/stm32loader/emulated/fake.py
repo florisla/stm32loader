@@ -157,6 +157,7 @@ class FakeConfiguration:
         self, erase, write, verify, write_protect, write_unprotect, firmware_file, family=None
     ):
         self.erase = erase
+        self.auto_erase = False
         self.write = write
         self.read = False
         self.verify = verify

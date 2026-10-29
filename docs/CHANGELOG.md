@@ -13,6 +13,7 @@ What changed in which version.
 * Add `-o/--offset` as an alternative to `--address`: offset from the start of flash.
 * Support `--length` with `--write` and `--verify`: use only that many bytes of the file.
 * Support partial erase on devices with mixed sector sizes (F2, F4, F7).
+* Add `-E/--auto-erase`: before `--write`, erase only the pages that the data covers.
 
 ## Changed
 * `#91` Drop the `--family` argument; do auto-detect instead.

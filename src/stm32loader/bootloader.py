@@ -28,6 +28,7 @@ import operator
 import struct
 import time
 import warnings
+from bisect import bisect_left, bisect_right
 from functools import lru_cache, reduce
 from itertools import accumulate
 
@@ -1072,19 +1073,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         both be at a flash page boundary. For devices with mixed page
         (sector) sizes, the device's flash layout is used.
         """
-        flash_start = self.flash_start
-        if flash_start is None:
-            flash_start = self.FLASH_START_DEFAULT
-        flash = self.device.flash if self.device else None
-
-        if start < flash_start:
-            raise PageIndexError(
-                f"Erase start address 0x{start:08X} is below the flash start 0x{flash_start:08X}."
-            )
-        if flash is not None and flash.end is not None and end > flash.end:
-            raise PageIndexError(
-                f"Erase end address 0x{end:08X} is beyond the flash end 0x{flash.end:08X}."
-            )
+        flash_start, flash = self._flash_range_layout(start, end)
 
         if flash is not None and isinstance(flash.page_size, list):
             return self._pages_from_layout(start, end, flash_start, flash.page_size)
@@ -1105,6 +1094,43 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         first_page = (start - flash_start) // page_size
         last_page = (end - flash_start) // page_size
         return list(range(first_page, last_page))
+
+    def pages_covering_range(self, start, end):
+        """
+        Return the indices of all pages that overlap the range [start, end).
+
+        Unlike pages_from_range, start and end need not be at a page
+        boundary: the range is extended to whole pages.
+        """
+        flash_start, flash = self._flash_range_layout(start, end)
+
+        if flash is not None and isinstance(flash.page_size, list):
+            page_starts = [flash_start + offset for offset in accumulate([0] + flash.page_size)]
+            first_page = bisect_right(page_starts, start) - 1
+            last_page = bisect_left(page_starts, end)
+            return list(range(first_page, last_page))
+
+        page_size = self.flash_page_size
+        first_page = (start - flash_start) // page_size
+        last_page = -(-(end - flash_start) // page_size)
+        return list(range(first_page, last_page))
+
+    def _flash_range_layout(self, start, end):
+        """Check that [start, end) is in flash; return flash start, layout."""
+        flash_start = self.flash_start
+        if flash_start is None:
+            flash_start = self.FLASH_START_DEFAULT
+        flash = self.device.flash if self.device else None
+
+        if start < flash_start:
+            raise PageIndexError(
+                f"Erase start address 0x{start:08X} is below the flash start 0x{flash_start:08X}."
+            )
+        if flash is not None and flash.end is not None and end > flash.end:
+            raise PageIndexError(
+                f"Erase end address 0x{end:08X} is beyond the flash end 0x{flash.end:08X}."
+            )
+        return flash_start, flash
 
     @staticmethod
     def _pages_from_layout(start, end, flash_start, page_sizes):
