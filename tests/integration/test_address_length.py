@@ -109,7 +109,7 @@ def test_erase_and_write_with_length_erases_only_needed_pages(loader, caplog):
         loader.perform_commands()
 
     # The emulated F3 device has 2 KiB pages.
-    assert "Performing partial erase (0x8000000 - 0x8001000, 2 pages)" in caplog.text
+    assert "Performing partial erase (0x08000000 - 0x08001000, 2 pages)" in caplog.text
     assert "Flash erase 2 pages from 0 to 1" in caplog.text
     assert flash_at(loader, FLASH, len(DATA)) == DATA
 
@@ -133,7 +133,7 @@ def test_auto_erase_erases_only_pages_covered_by_data(loader, caplog):
         loader.perform_commands()
 
     # 4 KiB of data at offset 0x100 spans three 2 KiB pages.
-    assert "Performing auto erase (0x8000100 - 0x8001100, 3 pages)" in caplog.text
+    assert "Performing auto erase (0x08000100 - 0x08001100, 3 pages)" in caplog.text
     assert "Flash erase 3 pages from 0 to 2" in caplog.text
     assert flash_at(loader, FLASH + 0x100, len(DATA)) == DATA
 

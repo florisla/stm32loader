@@ -163,7 +163,7 @@ class Stm32Loader:
             try:
                 if self.configuration.auto_erase:
                     logger.info(
-                        "Performing auto erase (0x%X - 0x%X, %d pages)... ",
+                        "Performing auto erase (0x%08X - 0x%08X, %d pages)... ",
                         address,
                         address + len(binary_data),
                         len(erase_pages),
@@ -176,7 +176,7 @@ class Stm32Loader:
                 else:
                     # Erase from address to address + length.
                     logger.info(
-                        "Performing partial erase (0x%X - 0x%X, %d pages)... ",
+                        "Performing partial erase (0x%08X - 0x%08X, %d pages)... ",
                         address,
                         address + self.configuration.length,
                         len(erase_pages),

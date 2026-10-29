@@ -657,8 +657,8 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         flash_size_lsb_address = flash_size_address - data_start_address
         uid_lsb_address = uid_address - data_start_address
 
-        logger.debug("flash_size_address = 0x%X", flash_size_address)
-        logger.debug("uid_address = 0x%X", uid_address)
+        logger.debug("flash_size_address = 0x%08X", flash_size_address)
+        logger.debug("uid_address = 0x%08X", uid_address)
 
         data = self.read_memory(data_start_address, self.data_transfer_size)
         device_uid = data[uid_lsb_address : uid_lsb_address + 12]
@@ -993,12 +993,12 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         data = bytearray()
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
         logger.debug(
-            "Read %7d bytes in %3d chunks at address 0x%X...", length, chunk_count, address
+            "Read %7d bytes in %3d chunks at address 0x%08X...", length, chunk_count, address
         )
         with self.show_progress("Reading", maximum=chunk_count) as progress_bar:
             while length:
                 read_length = min(length, self.data_transfer_size)
-                logger.debug("Read %d bytes at 0x%X", read_length, address)
+                logger.debug("Read %d bytes at 0x%08X", read_length, address)
                 data = data + self.read_memory(address, read_length)
                 progress_bar.next()
                 length = length - read_length
@@ -1015,13 +1015,13 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
         chunk_count = int(math.ceil(length / float(self.data_transfer_size)))
         offset = 0
         logger.info(
-            "Write %6d bytes in %3d chunks at address 0x%X...", length, chunk_count, address
+            "Write %6d bytes in %3d chunks at address 0x%08X...", length, chunk_count, address
         )
 
         with self.show_progress("Writing", maximum=chunk_count) as progress_bar:
             while length:
                 write_length = min(length, self.data_transfer_size)
-                logger.debug("Write %d bytes at 0x%X", write_length, address)
+                logger.debug("Write %d bytes at 0x%08X", write_length, address)
                 self.write_memory(address, data[offset : offset + write_length])
                 progress_bar.next()
                 length -= write_length
@@ -1054,7 +1054,7 @@ class Stm32Bootloader:  # pylint: disable=too-many-instance-attributes
             if reference_byte != read_byte:
                 raise DataMismatchError(
                     "Verification data does not match read data. "
-                    "First mismatch at address: 0x%X read 0x%X vs 0x%X expected."
+                    "First mismatch at offset: 0x%X read 0x%X vs 0x%X expected."
                     % (address, bytearray([read_byte])[0], bytearray([reference_byte])[0])
                 )
 
