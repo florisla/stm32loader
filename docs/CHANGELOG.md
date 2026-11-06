@@ -3,7 +3,7 @@
 What changed in which version.
 
 
-## [1.0.0] - [date]
+## [1.0.0] - 2026-11-06
 
 ### Added
 * Support Python 3.15.
