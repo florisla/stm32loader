@@ -3,32 +3,48 @@
 What changed in which version.
 
 
-## [0.8.0] - TBD
+## [1.0.0] - [date]
 
 ### Added
 * Support Python 3.15.
-* `#81` Support STM32G4 family.
 * `#87` Officially support Python 3.12/3.13/3.14, PyPy 3.10/3.11.
-* `#69` Print details about erased pages.
+* Add `-E/--auto-erase`: before `--write`, erase only the pages that the data covers.
 * Add `-o/--offset` as an alternative to `--address`: offset from the start of flash.
 * Support `--length` with `--write` and `--verify`: use only that many bytes of the file.
 * Support partial erase on devices with mixed sector sizes (F2, F4, F7).
-* Add `-E/--auto-erase`: before `--write`, erase only the pages that the data covers.
+* `#96` `#97` Support write protection and write unprotection.
+* `#93` Read flash size and UID through the device table, also on devices with a long UID.
+* `#69` Print details about erased pages.
 
-## Changed
-* `#91` Drop the `--family` argument; do auto-detect instead.
+### Device support
+* `#81` Support STM32G4 family.
+* Support ST BlueNRG-LP and BlueNRG-LPS devices.
+* `#98` Fix BlueNRG device details.
+* `#102` Support GigaDevice GD32VW55x.
+* Support STM32G4 single/dual bank mode (modified page size).
+* Fix RAM range of STM32F070xB and STM32F09xxx.
+
+### Fixed
+* `#101` Update transfer details after detecting the device.
+* Show `--port` as required in usage on Python 3.13+.
+
+### Documented
+* `#90` Move docs to `docs` folder.
+* Add `docs/CONTRIBUTORS.md`.
+
+### Changed
+* `#91` Drop the `--family` argument; do auto-detect instead, based onAN2606 device table.
+* Treat --erase --address as a global address like --write and --read.
 * Produce output through logging (info to stdout, warning/error to stderr).
 * Deprecate `Stm32Bootloader` 'verbosity' argument.
-* Treat --erase --address as a global address like --write and --read.
 * `Stm32Bootloader.erase_memory()` raises `PageIndexError` for an empty page list
   instead of doing a global erase.
 
-## Changed (infrastructure)
-* Upgraded CI.
+### Changed (infrastructure)
+* Upgrade CI.
 * `#88` Use uv as build backend.
 * `#88` Use uv in usage examples.
-* `#71` Use `ruff` as formatter.
-* `#90` Move docs to `docs` folder.
+* `#71` `#86` Use `ruff` as formatter and linter.
 
 
 ## [0.7.1] - 2023-10-18
