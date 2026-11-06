@@ -1,4 +1,4 @@
-"""Tests for --address, --offset and --length handling, on the emulated device."""
+"""Test --address, --offset and --length handling on the emulated device."""
 
 import logging
 
@@ -16,7 +16,7 @@ DATA = bytes((index % 255) + 1 for index in range(4096))
 
 @pytest.fixture
 def loader(tmp_path):
-    """Return a loader that writes and verifies DATA on the emulated F3 device."""
+    """Return a loader that writes and verifies DATA on an emulated F3."""
     firmware_file = tmp_path / "firmware.bin"
     firmware_file.write_bytes(DATA)
 
